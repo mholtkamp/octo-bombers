@@ -6,8 +6,9 @@ Bomber =
 function Bomber:Create()
 
     self.moveDir = Vec(0,0,0)
+    self.moveVelocity = Vec(0,0,0)
     self.velocity = Vec(0,0,0)
-    self.moveSpeed = 5.0
+    self.moveSpeed = 3.5
 
 end
 
@@ -15,7 +16,9 @@ function Bomber:Start()
 
     world:EnableInternalEdgeSmoothing(true)
 
+    self.mesh = self:FindChild('Mesh', true)
     self.camera = self:FindChild('Camera', true)
+    
     if (self.camera) then
         world:SetActiveCamera(self.camera)
     end
@@ -27,12 +30,22 @@ function Bomber:Stop()
 
 end
 
+function Bomber:GatherProperties()
+
+    return
+    {
+        { name = "moveSpeed", type = DatumType.Float },
+    }
+
+end
+
 function Bomber:Tick(deltaTime)
 
     self:UpdateMovement(deltaTime)
     self:UpdateAction(deltaTime)
     self:UpdateMotion(deltaTime)
     self:UpdateAnimation(deltaTime)
+    self:UpdateOrientation(deltaTime)
 
 end
 
@@ -67,27 +80,29 @@ end
 
 function Bomber:UpdateMotion(deltaTime)
 
-    -- Gravity]
+    -- Gravity
     self.velocity.y = self.velocity.y + deltaTime * Bomber.gravity
     self.velocity.x = 0
     self.velocity.z = 0
 
     -- Movement Velocity
-    self.velocity = self.velocity + self.moveDir * self.moveSpeed
+    local targetMoveVel = self.moveDir * self.moveSpeed
+    self.moveVelocity = Math.Approach(self.moveVelocity, targetMoveVel, 25.0, deltaTime)
+    self.curMoveSpeed = self.moveVelocity:Magnitude()
+    self.velocity = self.velocity + self.moveVelocity
 
     -- Sweep along velocity
     local nodePos = self:GetWorldPosition()
     local endPos = nodePos + self.velocity * deltaTime
     local sweepRes = self:SweepToPosition(endPos)
-    local offsetMag = 0.002
 
     if (sweepRes.hitNode) then
+
+        -- Uncomment to debug the hit normal.
+        --Renderer.AddDebugLine(sweepRes.hitPosition, sweepRes.hitPosition + sweepRes.hitNormal * 1.0, Vec(0, 1, 0, 1), 3.0)
+
         -- Update to new position
         nodePos = self:GetWorldPosition()
-
-        -- Slightly push node away from hit position to make sure we don't penetrate the hit surface
-        nodePos = nodePos + sweepRes.hitNormal * offsetMag
-        self:SetWorldPosition(nodePos)
 
         -- Cancel out velocity along normal and perform a second sweep
         self.velocity = self.velocity - (sweepRes.hitNormal * Vector.Dot(self.velocity, sweepRes.hitNormal))
@@ -99,6 +114,22 @@ end
 
 function Bomber:UpdateAnimation(deltaTime)
 
-    
+    -- Blend between idle and run based on move speed
+    local runAlpha = Math.Clamp(self.curMoveSpeed / (self.moveSpeed * 0.5), 0, 1)
+
+    self.mesh:PlayAnimation('Idle', true, 1, 1.0 - runAlpha, 1)
+    self.mesh:PlayAnimation('Run', true, 1, runAlpha, 2)
+
+end
+
+
+function Bomber:UpdateOrientation(deltaTime)
+
+    if (self.curMoveSpeed > 0.01) then
+        local moveDir = self.moveVelocity:Normalize()
+        local facingDir = -moveDir
+        local moveOrientation = Math.VectorToRotation(facingDir)
+        self.mesh:SetWorldRotation(moveOrientation)
+    end
 
 end
