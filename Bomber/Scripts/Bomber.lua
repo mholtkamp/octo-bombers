@@ -14,8 +14,6 @@ end
 
 function Bomber:Start()
 
-    world:EnableInternalEdgeSmoothing(true)
-
     self.mesh = self:FindChild('Mesh', true)
     self.camera = self:FindChild('Camera', true)
     
