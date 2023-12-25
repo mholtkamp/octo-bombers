@@ -82,6 +82,7 @@ function MatchState:ResetMatch()
             platform:SetCollisionGroup(BomberCollision.Environment)
             platform:SetCollisionMask(~BomberCollision.Environment)
             platform:SetStaticMesh(self.platformMesh)
+            platform:SetName('Island')
         end
     end
 
@@ -111,10 +112,12 @@ function MatchState:GenerateGrid()
                 object = self.field:CreateChild('StaticMesh3D')
                 object:SetStaticMesh(LoadAsset('SM_GiftBox'))
                 object:AddTag('Box')
+                object:SetName('Box')
             elseif (roll < self.boxSpawnChance + self.blockSpawnChance) then
                 object = self.field:CreateChild('StaticMesh3D')
                 object:SetStaticMesh(LoadAsset('SM_Block'))
                 object:AddTag('Block')
+                object:SetName('Block')
                 object:SetScale(Vec(1, 0.6, 1.0))
             end
 
