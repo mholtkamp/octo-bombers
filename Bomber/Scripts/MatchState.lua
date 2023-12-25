@@ -10,6 +10,12 @@ function MatchState:Create()
     self.gridSizeX = 32
     self.gridSizeZ = 32
 
+    self.bombers = {}
+    self.numBombers = 4
+
+    self.boxSpawnChance = 0.3
+    self.blockSpawnChance = 0.2
+
 end
 
 function MatchState:GatherProperties()
@@ -62,12 +68,14 @@ function MatchState:ResetMatch()
     local numPlatformsX = self.gridSizeX / 4
     local numPlatformsZ = self.gridSizeZ / 4
 
+    self:GenerateGrid()
+
     -- Spawn Platforms
     for x = 1, numPlatformsX do 
         for z = 1, numPlatformsZ do
             local platform = self.field:CreateChild('StaticMesh3D')
-            local xPos = (x - 1) * 4
-            local zPos = (z - 1) * 4
+            local xPos = (x - 1) * 4 + 1
+            local zPos = (z - 1) * 4 + 1
             platform:SetWorldPosition(Vec(xPos, 0, zPos))
             platform:EnableTriangleCollision(true)
             platform:EnableCollision(true)
@@ -84,5 +92,55 @@ function MatchState:ResetMatch()
 
 
     -- Spawn / Place Bombers
+
+end
+
+function MatchState:GenerateGrid()
+
+    self.grid = {}
+
+    for x = 1, self.gridSizeX do
+        for z = 1, self.gridSizeZ do
+
+            local gridIdx = x + z * self.gridSizeX
+
+            local roll = Math.RandRange(0.0, 1.0)
+            local object = nil
+
+            if (roll < self.boxSpawnChance) then
+                object = self.field:CreateChild('StaticMesh3D')
+                object:SetStaticMesh(LoadAsset('SM_GiftBox'))
+                object:AddTag('Box')
+            elseif (roll < self.boxSpawnChance + self.blockSpawnChance) then
+                object = self.field:CreateChild('StaticMesh3D')
+                object:SetStaticMesh(LoadAsset('SM_Block'))
+                object:AddTag('Block')
+                object:SetScale(Vec(1, 0.6, 1.0))
+            end
+
+            if (object) then
+                object:EnableCollision(true)
+                object:EnableTriangleCollision(true)
+                object:SetCollisionGroup(BomberCollision.Environment)
+                object:SetCollisionMask(~BomberCollision.Environment)
+                object:SetWorldPosition(Vec(x, 0, z))
+
+                self:SetGridObject(x, z, object)
+            end
+
+        end
+    end
+
+end
+
+function MatchState:GetGridObject(x, z)
+
+    return self.grid[x + z * self.gridSizeX]
+
+end
+
+function MatchState:SetGridObject(x, z, object)
+
+    self.grid[x + z * self.gridSizeX] = object
 
 end
