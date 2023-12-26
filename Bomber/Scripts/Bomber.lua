@@ -9,7 +9,9 @@ function Bomber:Create()
     self.moveVelocity = Vec(0,0,0)
     self.velocity = Vec(0,0,0)
     self.moveSpeed = 3.5
-
+    self.cellX = 0
+    self.cellZ = 0
+    self.actionTime = 0.0
 end
 
 function Bomber:Start()
@@ -37,6 +39,20 @@ function Bomber:GatherProperties()
 
 end
 
+function Bomber:GatherNetFuncs()
+    
+    return 
+    {
+        { name = 'S_PlantBomb', type = NetFuncType.Server, reliable = true},
+        { name = 'S_SwingCane', type = NetFuncType.Server, reliable = true},
+        { name = 'S_SyncTransform', type = NetFuncType.Server, reliable = false},
+
+        { name = 'M_PlantBomb', type = NetFuncType.Client, reliable = false},
+        { name = 'M_SwingCane', type = NetFuncType.Client, reliable = false},
+    }
+
+end
+
 function Bomber:Tick(deltaTime)
 
     self:UpdateMovement(deltaTime)
@@ -44,6 +60,7 @@ function Bomber:Tick(deltaTime)
     self:UpdateMotion(deltaTime)
     self:UpdateAnimation(deltaTime)
     self:UpdateOrientation(deltaTime)
+    self:UpdateCell(deltaTime)
 
 end
 
@@ -73,7 +90,20 @@ end
 
 function Bomber:UpdateAction(deltaTime)
 
+    self.actionTime = math.max(self.actionTime - deltaTime, 0)
+    if (actionTime > 0) then
+        return
+    end
 
+    if (self:IsLocallyControlled()) then
+        if (Input.IsKeyJustDown(Key.Z) or Input.IsGamepadButtonDown(Gamepad.B)) then
+            -- Plant Bomb
+            S_PlantBomb()
+        elseif (Input.IsKeyJustDown(Key.X) or Input.IsGamepadButtonDown(Gamepad.A)) then
+            -- Swing Cane
+            S_SwingCane()
+        end
+    end
 end
 
 function Bomber:Move(axes, deltaTime)
@@ -143,5 +173,41 @@ function Bomber:UpdateOrientation(deltaTime)
         local moveOrientation = Math.VectorToRotation(facingDir)
         self.mesh:SetWorldRotation(moveOrientation)
     end
+
+end
+
+function Bomber:UpdateCell(deltaTime)
+
+    local match = MatchState.Get()
+    local worldPos = self:GetWorldPosition()
+    self.cellX, self.cellZ = match:GetCell(worldPos)
+
+end
+
+function Bomber:Kill()
+
+    Log.Debug('Bomber kill! ' .. self:GetName())
+
+end
+
+
+function Bomber:S_PlantBomb()
+
+end
+
+function Bomber:S_SwingCane()
+
+end
+
+function Bomber:S_SyncTransform(position, meshYaw)
+
+
+end
+
+function Bomber:M_PlantBomb()
+
+end
+
+function Bomber:M_SwingCane()
 
 end

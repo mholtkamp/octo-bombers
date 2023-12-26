@@ -2,8 +2,13 @@ Script.Require("Utils.lua")
 
 MatchState = 
 {
-
+    current = nil,
 }
+
+MatchState.Get = function()
+    return MatchState.current
+end
+
 
 function MatchState:Create()
 
@@ -38,6 +43,18 @@ function MatchState:Start()
 
     self:ResetMatch()
 
+    if (MatchState.current ~= nil) then
+        Engine.Alert('Two match states created at the same time???')
+    end
+
+    MatchState.current = self
+
+end
+
+function MatchState:Stop()
+
+    MatchState.current = nil
+
 end
 
 function MatchState:GetCell(worldPos)
@@ -45,8 +62,11 @@ function MatchState:GetCell(worldPos)
     local x = Utils.Round(worldPos.x)
     local z = Utils.Round(worldPos.z)
 
-    x = Math.Clamp(x, 0, self.gridSizeX)
-    z = Math.Clamp(z, 0, self.gridSizeZ)
+    if (x < 1 or x > self.gridSizeX or
+        z < 1 or z > self.gridSizeZ) then
+        x = -1
+        z = -1
+    end
 
     return x,z
 end
@@ -88,12 +108,6 @@ function MatchState:ResetMatch()
             platform:SetName('Island')
         end
     end
-
-    -- Spawn Trees
-
-
-    -- Spawn Blocks
-
 
     -- Spawn / Place Bombers
 
