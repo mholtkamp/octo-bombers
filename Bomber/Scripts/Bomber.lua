@@ -76,6 +76,33 @@ function Bomber:UpdateAction(deltaTime)
 
 end
 
+function Bomber:Move(axes, deltaTime)
+
+    -- Sweep along velocity
+    local velocity = self.velocity * axes
+    self.velocity = self.velocity - velocity
+    local nodePos = self:GetWorldPosition()
+    local endPos = nodePos + velocity * deltaTime
+    local sweepRes = self:SweepToPosition(endPos)
+
+    if (sweepRes.hitNode) then
+
+        -- Uncomment to debug the hit normal.
+        --Renderer.AddDebugLine(sweepRes.hitPosition, sweepRes.hitPosition + sweepRes.hitNormal * 1.0, Vec(0, 1, 0, 1), 3.0)
+
+        -- Update to new position
+        nodePos = self:GetWorldPosition()
+
+        -- Cancel out velocity along normal and perform a second sweep
+        velocity = velocity - (sweepRes.hitNormal * Vector.Dot(velocity, sweepRes.hitNormal))
+        endPos = nodePos + velocity * deltaTime
+        sweepRes = self:SweepToPosition(endPos)
+    end
+
+    self.velocity = self.velocity + velocity
+
+end
+
 function Bomber:UpdateMotion(deltaTime)
 
     -- Gravity
@@ -89,24 +116,11 @@ function Bomber:UpdateMotion(deltaTime)
     self.curMoveSpeed = self.moveVelocity:Magnitude()
     self.velocity = self.velocity + self.moveVelocity
 
-    -- Sweep along velocity
-    local nodePos = self:GetWorldPosition()
-    local endPos = nodePos + self.velocity * deltaTime
-    local sweepRes = self:SweepToPosition(endPos)
+    -- Move in Y direction first
+    self:Move(Vec(0, 1, 0), deltaTime)
 
-    if (sweepRes.hitNode) then
-
-        -- Uncomment to debug the hit normal.
-        --Renderer.AddDebugLine(sweepRes.hitPosition, sweepRes.hitPosition + sweepRes.hitNormal * 1.0, Vec(0, 1, 0, 1), 3.0)
-
-        -- Update to new position
-        nodePos = self:GetWorldPosition()
-
-        -- Cancel out velocity along normal and perform a second sweep
-        self.velocity = self.velocity - (sweepRes.hitNormal * Vector.Dot(self.velocity, sweepRes.hitNormal))
-        endPos = nodePos + self.velocity * deltaTime
-        sweepRes = self:SweepToPosition(endPos)
-    end
+    -- Move in X/Z plane next (for smoother movement along obstacles)
+    self:Move(Vec(1, 0, 1), deltaTime)
 
 end
 

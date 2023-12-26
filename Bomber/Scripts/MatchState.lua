@@ -126,16 +126,16 @@ function MatchState:GenerateGrid()
                 else
                     object = self.field:CreateChild('StaticMesh3D')
                     object:SetStaticMesh(self.blockMesh)
+                    object:EnableTriangleCollision(true)
+                    object:SetName('Block')
                 end
 
                 object:AddTag('Block')
-                object:SetName('Block')
                 object:SetScale(Vec(1, 0.6, 1.0))
             end
 
             if (object) then
                 object:EnableCollision(true)
-                object:EnableTriangleCollision(true)
                 object:SetCollisionGroup(BomberCollision.Environment)
                 object:SetCollisionMask(~BomberCollision.Environment)
                 object:SetWorldPosition(Vec(x, 0, z))
