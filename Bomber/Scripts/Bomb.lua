@@ -71,6 +71,9 @@ function Bomb:ExplodeCell(x, z)
     if (authority and object:HasTag('Box')) then
         object:SetPendingDestroy(true)
         match:SetGridObject(x, z, nil)
+
+        -- TODO: Drop item
+        
         return false
     end
 

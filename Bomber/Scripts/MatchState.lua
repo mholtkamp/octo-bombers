@@ -2,6 +2,7 @@ Script.Require("Utils.lua")
 
 MatchState = 
 {
+    kNumBoxVariants = 3,
     current = nil,
 }
 
@@ -39,6 +40,28 @@ function MatchState:GatherProperties()
     }
 end
 
+function MatchState:GatherNetFuncs()
+
+    return 
+    {
+        { name = 'M_DestroyGridObject', type = NetFuncType.Multicast, reliable = true },
+        { name = "S_SyncGrid", type = NetFuncType.Server, reliable = true },
+        { name = "C_SyncGrid", type = NetFuncType.Client, reliable = true },
+    }
+
+end
+
+function MatchState:GatherReplicatedData()
+
+    return 
+    {
+        { name = 'gridSizeX', type = DatumType.Integer },
+        { name = 'gridSizeZ', type = DatumType.Integer },
+    }
+
+end
+
+
 function MatchState:Start()
 
     self:ResetMatch()
@@ -48,6 +71,11 @@ function MatchState:Start()
     end
 
     MatchState.current = self
+
+    if (Network.IsClient()) then
+        self.grid = {}
+        self:InvokeNetFunc("S_SyncGrid")
+    end
 
 end
 
@@ -123,38 +151,17 @@ function MatchState:GenerateGrid()
             local gridIdx = x + z * self.gridSizeX
 
             local roll = Math.RandRange(0.0, 1.0)
-            local object = nil
+            local objectType = ObjectType.None
 
             if (roll < self.boxSpawnChance) then
-                object = self.field:CreateChild('StaticMesh3D')
-                object:SetStaticMesh(self.boxMesh)
-                object:AddTag('Box')
-                object:SetName('Box')
-                object:SetMaterialOverride(self.boxMaterials[Math.RandRangeInt(1, #self.boxMaterials)])
+                objectType = ObjectType.Box + Math.RandRangeInt(1, MatchState.kNumBoxVariants) - 1
             elseif (roll < self.boxSpawnChance + self.blockSpawnChance) then
                 local useTree = Math.RandRange(0, 1) < self.treeRatio
-                if (useTree) then
-                    object = self.treeScene:Instantiate()
-                    object:SetRotation(Vec(0, Math.RandRange(0.0, 360.0), 0))
-                    self.field:AddChild(object)
-                else
-                    object = self.field:CreateChild('StaticMesh3D')
-                    object:SetStaticMesh(self.blockMesh)
-                    object:EnableTriangleCollision(true)
-                    object:SetName('Block')
-                end
-
-                object:AddTag('Block')
-                object:SetScale(Vec(1, 0.6, 1.0))
+                objectType = useTree and ObjectType.Tree or ObjectType.Block
             end
 
-            if (object) then
-                object:EnableCollision(true)
-                object:SetCollisionGroup(BomberCollision.Environment)
-                object:SetCollisionMask(~BomberCollision.Environment)
-                object:SetWorldPosition(Vec(x, 0, z))
-
-                self:SetGridObject(x, z, object)
+            if (objectType ~= ObjectType.None) then
+                self:SpawnObject(x, z, objectType)
             end
 
         end
@@ -172,4 +179,77 @@ function MatchState:SetGridObject(x, z, object)
 
     self.grid[x + z * self.gridSizeX] = object
 
+end
+
+function MatchState:M_DestroyGridObject(x, z)
+
+    local curObj = self:GetGridObject(x,z)
+
+    if (curObj) then
+        curObj:SetPendingDestroy(true)
+    end
+
+    self:SetGridObject(x, z, nil)
+end
+
+function MatchState:S_SyncGrid()
+
+    for x = 1, self.gridSizeX do 
+        for z = 1, self.gridSizeZ do
+
+            local gridObj = self:GetGridObject(x,z)
+
+            if (gridObj and gridObj.objectType) then
+                self:InvokeNetFunc("C_SyncGrid", x, z, gridObj.objectType)
+            end
+        end
+    end
+
+
+end
+
+function MatchState:C_SyncGrid(x, z, objectType)
+
+    -- Client will need to recreate non-replicated objects (e.g. Blocks, Trees, Boxes)
+
+    self:SpawnObject(x, z, objectType)
+
+end
+
+function MatchState:SpawnObject(x, z, objectType)
+
+    local object = nil
+
+    if (objectType >= ObjectType.Box1 and objectType <= ObjectType.Box3) then
+        object = self.field:CreateChild('StaticMesh3D')
+        object:SetStaticMesh(self.boxMesh)
+        object:AddTag('Box')
+        object:SetName('Box')
+        local boxVariant = ObjectType.Box1 - objectType + 1
+        object:SetMaterialOverride(self.boxMaterials[boxVariant])
+    elseif (objectType == ObjectType.Tree) then
+        object = self.treeScene:Instantiate()
+        object:SetRotation(Vec(0, Math.RandRange(0.0, 360.0), 0))
+        object:AddTag('Tree')
+        --object:SetScale(Vec(1, 0.6, 1.0))
+        self.field:AddChild(object)
+    elseif (objectType == ObjectType.Block) then
+        object = self.field:CreateChild('StaticMesh3D')
+        object:SetStaticMesh(self.blockMesh)
+        object:EnableTriangleCollision(true)
+        object:SetName('Block')
+        object:AddTag('Block')
+        object:SetScale(Vec(1, 0.6, 1.0))
+    end
+
+
+    if (object) then
+        object.objectType = objectType
+        object:EnableCollision(true)
+        object:SetCollisionGroup(BomberCollision.Environment)
+        object:SetCollisionMask(~BomberCollision.Environment)
+        object:SetWorldPosition(Vec(x, 0, z))
+
+        self:SetGridObject(x, z, object)
+    end
 end

@@ -12,6 +12,10 @@ function Bomber:Create()
     self.cellX = 0
     self.cellZ = 0
     self.actionTime = 0.0
+    self.bomberId = 1
+    self.netYaw = 0.0
+    self.netPosition = Vec()
+    self.curMoveSpeed = 0
 end
 
 function Bomber:Start()
@@ -35,6 +39,18 @@ function Bomber:GatherProperties()
     return
     {
         { name = "moveSpeed", type = DatumType.Float },
+        { name = "bombScene", type = DatumType.Asset },
+    }
+
+end
+
+function Bomber:GatherReplicatedData()
+
+    return 
+    {
+        { name = 'netYaw', type = DatumType.Float },
+        { name = 'netPosition', type = DatumType.Vector },
+        { name = 'curMoveSpeed', type = DatumType.Float }
     }
 
 end
@@ -47,7 +63,6 @@ function Bomber:GatherNetFuncs()
         { name = 'S_SwingCane', type = NetFuncType.Server, reliable = true},
         { name = 'S_SyncTransform', type = NetFuncType.Server, reliable = false},
 
-        { name = 'M_PlantBomb', type = NetFuncType.Client, reliable = false},
         { name = 'M_SwingCane', type = NetFuncType.Client, reliable = false},
     }
 
@@ -61,6 +76,20 @@ function Bomber:Tick(deltaTime)
     self:UpdateAnimation(deltaTime)
     self:UpdateOrientation(deltaTime)
     self:UpdateCell(deltaTime)
+    self:UpdateNetwork(deltaTime)
+
+end
+
+function Bomber:IsLocallyControlled()
+
+    local locallyControlled = false
+    if (Network.IsLocal()) then
+        locallyControlled = (self.bomberId == 1)
+    else
+        locallyControlled = self:IsOwned()
+    end
+
+    return locallyControlled
 
 end
 
@@ -68,23 +97,27 @@ function Bomber:UpdateMovement(deltaTime)
 
     self.moveDir = Vec(0,0,0)
 
-    if (Input.IsKeyDown(Key.Left) or Input.IsGamepadButtonDown(Gamepad.Left)) then
-        self.moveDir.x = self.moveDir.x + -1.0
-    end
+    if (self:IsLocallyControlled()) then
 
-    if (Input.IsKeyDown(Key.Right) or Input.IsGamepadButtonDown(Gamepad.Right)) then
-        self.moveDir.x = self.moveDir.x + 1.0
-    end
+        if (Input.IsKeyDown(Key.Left) or Input.IsGamepadButtonDown(Gamepad.Left)) then
+            self.moveDir.x = self.moveDir.x + -1.0
+        end
 
-    if (Input.IsKeyDown(Key.Up) or Input.IsGamepadButtonDown(Gamepad.Up)) then
-        self.moveDir.z = self.moveDir.z + -1.0
-    end
+        if (Input.IsKeyDown(Key.Right) or Input.IsGamepadButtonDown(Gamepad.Right)) then
+            self.moveDir.x = self.moveDir.x + 1.0
+        end
 
-    if (Input.IsKeyDown(Key.Down) or Input.IsGamepadButtonDown(Gamepad.Down)) then
-        self.moveDir.z = self.moveDir.z + 1.0
-    end
+        if (Input.IsKeyDown(Key.Up) or Input.IsGamepadButtonDown(Gamepad.Up)) then
+            self.moveDir.z = self.moveDir.z + -1.0
+        end
 
-    self.moveDir = self.moveDir:Normalize()
+        if (Input.IsKeyDown(Key.Down) or Input.IsGamepadButtonDown(Gamepad.Down)) then
+            self.moveDir.z = self.moveDir.z + 1.0
+        end
+
+        self.moveDir = self.moveDir:Normalize()
+        
+    end
 
 end
 
@@ -135,22 +168,30 @@ end
 
 function Bomber:UpdateMotion(deltaTime)
 
-    -- Gravity
-    self.velocity.y = self.velocity.y + deltaTime * Bomber.gravity
-    self.velocity.x = 0
-    self.velocity.z = 0
+    if (self:IsLocallyControlled()) then
 
-    -- Movement Velocity
-    local targetMoveVel = self.moveDir * self.moveSpeed
-    self.moveVelocity = Math.Approach(self.moveVelocity, targetMoveVel, 25.0, deltaTime)
-    self.curMoveSpeed = self.moveVelocity:Magnitude()
-    self.velocity = self.velocity + self.moveVelocity
+        -- Gravity
+        self.velocity.y = self.velocity.y + deltaTime * Bomber.gravity
+        self.velocity.x = 0
+        self.velocity.z = 0
 
-    -- Move in Y direction first
-    self:Move(Vec(0, 1, 0), deltaTime)
+        -- Movement Velocity
+        local targetMoveVel = self.moveDir * self.moveSpeed
+        self.moveVelocity = Math.Approach(self.moveVelocity, targetMoveVel, 25.0, deltaTime)
+        self.curMoveSpeed = self.moveVelocity:Magnitude()
+        self.velocity = self.velocity + self.moveVelocity
 
-    -- Move in X/Z plane next (for smoother movement along obstacles)
-    self:Move(Vec(1, 0, 1), deltaTime)
+        -- Move in Y direction first
+        self:Move(Vec(0, 1, 0), deltaTime)
+
+        -- Move in X/Z plane next (for smoother movement along obstacles)
+        self:Move(Vec(1, 0, 1), deltaTime)
+
+    else
+        
+        self:SetWorldPosition(self.netPosition)
+
+    end
 
 end
 
@@ -167,11 +208,15 @@ end
 
 function Bomber:UpdateOrientation(deltaTime)
 
-    if (self.curMoveSpeed > 0.01) then
-        local moveDir = self.moveVelocity:Normalize()
-        local facingDir = -moveDir
-        local moveOrientation = Math.VectorToRotation(facingDir)
-        self.mesh:SetWorldRotation(moveOrientation)
+    if (self:IsLocallyControlled()) then
+        if (self.curMoveSpeed > 0.01) then
+            local moveDir = self.moveVelocity:Normalize()
+            local facingDir = -moveDir
+            local moveOrientation = Math.VectorToRotation(facingDir)
+            self.mesh:SetWorldRotation(moveOrientation)
+        end
+    else
+        self:mesh:SetWorldRotation(Vec(0, self.netYaw, 0))
     end
 
 end
@@ -184,6 +229,16 @@ function Bomber:UpdateCell(deltaTime)
 
 end
 
+function Bomer:UpdateNetwork(deltaTime)
+
+    if (self:IsLocallyControlled()) then
+
+        self:InvokeNetFunc('S_SyncTransform', self:GetWorldPosition(), self.mesh:GetWorldRotation().y, self.curMoveSpeed)
+
+    end
+    
+end
+
 function Bomber:Kill()
 
     Log.Debug('Bomber kill! ' .. self:GetName())
@@ -193,19 +248,31 @@ end
 
 function Bomber:S_PlantBomb()
 
+    if (self.actionTime <= 0) then
+        local match = MatchState.Get()
+        local x,z = match:GetCell(self:GetWorldPosition())
+
+        -- Make sure the grid space is empty
+        if (match:GetGridObject(x,z) == nil) then
+            local bomb = self.bombScene:Instantiate()
+            bomb:SetWorldPosition(Vec(x, 0, z))
+            match:SetGridObject(x, z, bomb)
+        end
+    end
+
 end
 
 function Bomber:S_SwingCane()
 
 end
 
-function Bomber:S_SyncTransform(position, meshYaw)
+function Bomber:S_SyncTransform(position, yaw, speed)
 
-
-end
-
-function Bomber:M_PlantBomb()
-
+    -- Client has full control over position / yaw. (Server is trusting the client)
+    -- This means cheating is easy, but the positive side is that the client's movement will feel responsive.
+    self.netPosition = position 
+    self.netYaw = yaw
+    self.curMoveSpeed = speed
 end
 
 function Bomber:M_SwingCane()
