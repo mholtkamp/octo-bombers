@@ -15,6 +15,7 @@ function MatchState:Create()
 
     self.boxSpawnChance = 0.3
     self.blockSpawnChance = 0.2
+    self.treeRatio = 0.3
 
 end
 
@@ -27,8 +28,9 @@ function MatchState:GatherProperties()
 
         { name = "platformMesh", type = DatumType.Asset },
         { name = "blockMesh", type = DatumType.Asset },
+        { name = "boxMesh", type = DatumType.Asset },
         { name = "treeScene", type = DatumType.Asset },
-        { name = "boxes", type = DatumType.Asset, array = true},
+        { name = "boxMaterials", type = DatumType.Asset, array = true},
     }
 end
 
@@ -57,6 +59,7 @@ function MatchState:ResetMatch()
     end
 
     self.field = world:SpawnNode('Node3D')
+    self.field:SetName("Field")
     self.field:SetWorldPosition(Vec(0,0,0))
 
     -- Ensure gridSize is multiple of 4
@@ -110,12 +113,21 @@ function MatchState:GenerateGrid()
 
             if (roll < self.boxSpawnChance) then
                 object = self.field:CreateChild('StaticMesh3D')
-                object:SetStaticMesh(LoadAsset('SM_GiftBox'))
+                object:SetStaticMesh(self.boxMesh)
                 object:AddTag('Box')
                 object:SetName('Box')
+                object:SetMaterialOverride(self.boxMaterials[Math.RandRangeInt(1, #self.boxMaterials)])
             elseif (roll < self.boxSpawnChance + self.blockSpawnChance) then
-                object = self.field:CreateChild('StaticMesh3D')
-                object:SetStaticMesh(LoadAsset('SM_Block'))
+                local useTree = Math.RandRange(0, 1) < self.treeRatio
+                if (useTree) then
+                    object = self.treeScene:Instantiate()
+                    object:SetRotation(Vec(0, Math.RandRange(0.0, 360.0), 0))
+                    self.field:AddChild(object)
+                else
+                    object = self.field:CreateChild('StaticMesh3D')
+                    object:SetStaticMesh(self.blockMesh)
+                end
+
                 object:AddTag('Block')
                 object:SetName('Block')
                 object:SetScale(Vec(1, 0.6, 1.0))
