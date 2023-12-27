@@ -116,7 +116,7 @@ function Bomber:UpdateMovement(deltaTime)
         end
 
         self.moveDir = self.moveDir:Normalize()
-        
+
     end
 
 end
@@ -124,7 +124,7 @@ end
 function Bomber:UpdateAction(deltaTime)
 
     self.actionTime = math.max(self.actionTime - deltaTime, 0)
-    if (actionTime > 0) then
+    if (self.actionTime > 0) then
         return
     end
 
@@ -216,7 +216,7 @@ function Bomber:UpdateOrientation(deltaTime)
             self.mesh:SetWorldRotation(moveOrientation)
         end
     else
-        self:mesh:SetWorldRotation(Vec(0, self.netYaw, 0))
+        self.mesh:SetWorldRotation(Vec(0, self.netYaw, 0))
     end
 
 end
@@ -229,7 +229,7 @@ function Bomber:UpdateCell(deltaTime)
 
 end
 
-function Bomer:UpdateNetwork(deltaTime)
+function Bomber:UpdateNetwork(deltaTime)
 
     if (self:IsLocallyControlled()) then
 
