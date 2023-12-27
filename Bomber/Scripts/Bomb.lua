@@ -90,15 +90,33 @@ function Bomb:Tick(deltaTime)
 
     self.time = self.time - deltaTime
 
+    self:UpdateVisuals(deltaTime)
+    self:UpdateExplosion(deltaTime)
+    self:UpdateCollision(deltaTime)
+    self:UpdateCell(deltaTime)
+    self:UpdateMovement(deltaTime)
+
+end
+
+function Bomb:UpdateVisuals(deltaTime)
+
     -- Pulse mesh and flash material
     local bombScale = 1.1 + 0.1 * math.sin(self.time * 5)
     local bombRed = 1.0 + 0.4 * math.sin(self.time * 7)
     self.mesh:SetScale(Vec(bombScale, bombScale, bombScale))
     self.material:SetColor(Vec(bombRed, 1, 1, 1))
 
+end
+
+function Bomb:UpdateExplosion(deltaTime)
+
     if (self.time <= 0.0 and Network.IsAuthority()) then
         self:Explode()
     end
+
+end
+
+function Bomb:UpdateCollision(deltaTime)
 
     if (not self.collisionEnabled and 
         self.numOverlappedBombers == 0 and 
@@ -107,9 +125,35 @@ function Bomb:Tick(deltaTime)
         self:EnableCollision(true)
     end
 
+end
+
+function Bomb:UpdateCell(deltaTime)
+
+    local match = MatchState.Get()
+    local curX, curZ = match:GetCell(self:GetWorldPosition())
+
+    if (self.x ~= curX or self.z ~= curZ) then
+        -- Cell has changed, so update our saved X/Z and match grid
+        if (match:GetGridObject(self.x, self.z) == self) then
+            match:SetGridObject(self.x, self.z, nil)
+        end
+
+        self.x = curX
+        self.z = curZ
+
+        if (match:GetGridObject(self.x, self.z) == nil) then
+            match:SetGridObject(self.x, self.z, self)
+        end
+    end
+
+end
+
+function Bomb:UpdateMovement(deltaTime)
+
     -- Handle movement
     if (Network.IsAuthority()) then 
-        if (self.velocity ~= Vec(0,0,0)) then
+        local speed = self.velocity:Magnitude()
+        if (speed > 0.0001) then
             local startPos = self:GetWorldPosition()
             local endPos = startPos + self.velocity * deltaTime
             local sweepRes = self:SweepToPosition(endPos, ~(BomberCollision.Trigger))
@@ -123,6 +167,14 @@ function Bomb:Tick(deltaTime)
             self.velocity = self.velocity / speed 
             speed = math.max(speed - Bomb.kDragSpeed * deltaTime, 0)
             self.velocity = self.velocity * speed
+        end
+
+        if (speed < 0.3) then
+            -- Gravitate toward cell position
+            local curPos = self:GetWorldPosition()
+            local targetPos = Vec(self.x, curPos.y, self.z)
+            local newPos = Vector.Damp(curPos, targetPos, 0.05, deltaTime)
+            self:SetWorldPosition(newPos)
         end
     end
 
