@@ -1,6 +1,8 @@
 Bomb = 
 {
     kExplodeDelay = 4.0,
+    kLaunchSpeed = 8.0,
+    kDragSpeed = 8.0,
 }
 
 function Bomb:GatherProperties()
@@ -105,12 +107,59 @@ function Bomb:Tick(deltaTime)
         self:EnableCollision(true)
     end
 
+    -- Handle movement
+    if (Network.IsAuthority()) then 
+        if (self.velocity ~= Vec(0,0,0)) then
+            local startPos = self:GetWorldPosition()
+            local endPos = startPos + self.velocity * deltaTime
+            local sweepRes = self:SweepToPosition(endPos, ~(BomberCollision.Trigger))
+
+            if (sweepRes.hitNode) then
+                self.velocity = -self.velocity
+            end
+
+            -- Dampen velocity / apply friction
+            local speed = self.velocity:Length()
+            self.velocity = self.velocity / speed 
+            speed = math.max(speed - Bomb.kDragSpeed * deltaTime, 0)
+            self.velocity = self.velocity * speed
+        end
+    end
+
 end
 
 function Bomb:Explode()
     if (Network.IsAuthority()) then
         self:InvokeNetFunc('M_Explode')
         self:SetPendingDestroy(true)
+    end
+end
+
+function Bomb:Launch(dir)
+    if (Network.IsAuthority()) then
+        local absX = math.abs(dir.x)
+        local absZ = math.abs(dir.z)
+
+        -- Determine the closest axis-aligned direction
+        local axisDir = Vec(0,0,0)
+        if (absX > absZ) then
+            if (dir.x >= 0) then
+                axisDir = Vec(1, 0, 0)
+            else
+                axisDir = Vec(-1, 0, 0)
+            end
+        else
+            if (dir.z >= 0) then
+                axisDir = Vec(0, 0, 1)
+            else
+                axisDir = Vec(0, 0, -1)
+            end
+        end
+
+        Log.Debug('axisDir = ' .. tostring(axisDir))
+
+        self.velocity = axisDir * Bomb.kLaunchSpeed
+
     end
 end
 

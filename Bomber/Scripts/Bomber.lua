@@ -16,12 +16,15 @@ function Bomber:Create()
     self.netYaw = 0.0
     self.netPosition = Vec()
     self.curMoveSpeed = 0
+    self.swingOverlaps = {}
+    self.swingTimer = 0.0
 end
 
 function Bomber:Start()
 
     self.mesh = self:FindChild('Mesh', true)
     self.camera = self:FindChild('Camera', true)
+    self.swingSphere = self:FindChild('SwingSphere', true)
     
     if (self.camera) then
         world:SetActiveCamera(self.camera)
@@ -65,6 +68,22 @@ function Bomber:GatherNetFuncs()
 
         { name = 'M_SwingCane', type = NetFuncType.Client, reliable = false},
     }
+
+end
+
+function Bomber:BeginOverlap(this, other)
+
+    if (this == self.swingSphere and other ~= self) then
+        self.swingOverlaps[other] = other
+    end
+
+end
+
+function Bomber:EndOverlap(this, other)
+
+    if (this == self.swingSphere and other ~= self) then
+        self.swingOverlaps[other] = nil
+    end
 
 end
 
@@ -115,7 +134,7 @@ function Bomber:UpdateMovement(deltaTime)
             self.moveDir.z = self.moveDir.z + 1.0
         end
 
-        self.moveDir = self.moveDir:Normalize()
+        self.moveDir = (self.actionTime <= 0) and self.moveDir:Normalize() or Vec(0,0,0)
 
     end
 
@@ -124,17 +143,36 @@ end
 function Bomber:UpdateAction(deltaTime)
 
     self.actionTime = math.max(self.actionTime - deltaTime, 0)
-    if (self.actionTime > 0) then
-        return
-    end
 
-    if (self:IsLocallyControlled()) then
+    if (self:IsLocallyControlled() and self.actionTime <= 0.0) then
         if (Input.IsKeyJustDown(Key.Z) or Input.IsGamepadButtonDown(Gamepad.B)) then
             -- Plant Bomb
             self:InvokeNetFunc('S_PlantBomb')
         elseif (Input.IsKeyJustDown(Key.X) or Input.IsGamepadButtonDown(Gamepad.A)) then
             -- Swing Cane
             self:InvokeNetFunc('S_SwingCane')
+        end
+    end
+
+    -- Handle swing on server
+    if (Network.IsAuthority() and self.swingTimer > 0) then
+        self.swingTimer = self.swingTimer - deltaTime
+
+        if (self.swingTimer <= 0.0) then
+
+            for k,v in pairs(self.swingOverlaps) do
+                local node = v
+
+                if (node:HasTag('Bomber')) then
+                    Log.Debug('TODO: Stun bomber')
+                elseif (node:HasTag('Bomb')) then
+                    -- Note: The bomber mesh is facing -Z so its 'ForwardVector' is actually backwards.
+                    local facingDir = -self.mesh:GetForwardVector()
+                    node:Launch(facingDir)
+                end
+            end
+
+            self.swingSphere:EnableOverlaps(false)
         end
     end
 end
@@ -259,13 +297,19 @@ function Bomber:S_PlantBomb()
             Log.Debug('Instantiate bomb!')
             local bomb = self.bombScene:Instantiate()
             match.field:AddChild(bomb)
-            bomb:SetWorldPosition(Vec(x, bomb:GetRadius(), z))
+            bomb:SetWorldPosition(Vec(x, bomb:GetRadius() + 0.04, z))
         end
     end
 
 end
 
 function Bomber:S_SwingCane()
+
+    if (self.actionTime <= 0.0) then
+        self:InvokeNetFunc('M_SwingCane')
+        self.swingTimer = 0.15
+        self.swingSphere:EnableOverlaps(true)
+    end
 
 end
 
@@ -280,4 +324,6 @@ end
 
 function Bomber:M_SwingCane()
 
+    self.mesh:PlayAnimation('Swing')
+    self.actionTime = 0.3
 end

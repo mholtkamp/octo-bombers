@@ -3,6 +3,9 @@ BomberCollision =
 {
     Default = 0x01,
     Environment = 0x02,
+    Bomber = 0x04,
+    Bomb = 0x08,
+    Trigger = 0x10,
 }
 
 ObjectType = 
