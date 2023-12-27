@@ -22,6 +22,7 @@ function Bomb:Create()
     self.time = Bomb.kExplodeDelay
     self.range = 1
     self.velocity = Vec()
+    self.exploded = false
 end
 
 function Bomb:Start()
@@ -42,15 +43,21 @@ function Bomb:Tick(deltaTime)
     self.time = self.time - deltaTime
 
     -- Pulse mesh and flash material
-    local bombScale = 1.0 + 0.5 * math.sin(self.time)
-    local bombRed = math.max(bombScale, 1.0)
+    local bombScale = 1.0 + 0.1 * math.sin(self.time * 5)
+    local bombRed = 1.0 + 0.4 * math.sin(self.time * 7)
     self.mesh:SetScale(Vec(bombScale, bombScale, bombScale))
     self.material:SetColor(Vec(bombRed, 1, 1, 1))
 
-    if (self.time <= 0.0) then
-
+    if (self.time <= 0.0 and Network.IsAuthority()) then
         self:InvokeNetFunc('M_Explode')
+        self:SetPendingDestroy(true)
     end
+
+end
+
+function Bomb:SpawnExplodeParticle(x, z)
+
+    world:SpawnParticle(self.explodeParticle, Vec(x, 0, z))
 
 end
 
@@ -68,7 +75,7 @@ function Bomb:ExplodeCell(x, z)
 
     local object = match:GetGridObject(x, z)
 
-    if (authority and object:HasTag('Box')) then
+    if (authority and object and object:HasTag('Box')) then
         object:SetPendingDestroy(true)
         match:SetGridObject(x, z, nil)
 
@@ -94,7 +101,7 @@ function Bomb:ExplodeCell(x, z)
 
 end
 
-function Bomb:Explode()
+function Bomb:M_Explode()
 
     local match = MatchState.Get()
     local authority = Network.IsAuthority()
@@ -133,6 +140,8 @@ function Bomb:Explode()
 
         -- Hit exact X,Z where bomb was positioned
         self:ExplodeCell(x, z)
+
+        self.exploded = true
 
     end
 

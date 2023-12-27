@@ -131,10 +131,10 @@ function Bomber:UpdateAction(deltaTime)
     if (self:IsLocallyControlled()) then
         if (Input.IsKeyJustDown(Key.Z) or Input.IsGamepadButtonDown(Gamepad.B)) then
             -- Plant Bomb
-            S_PlantBomb()
+            self:InvokeNetFunc('S_PlantBomb')
         elseif (Input.IsKeyJustDown(Key.X) or Input.IsGamepadButtonDown(Gamepad.A)) then
             -- Swing Cane
-            S_SwingCane()
+            self:InvokeNetFunc('S_SwingCane')
         end
     end
 end
@@ -248,13 +248,17 @@ end
 
 function Bomber:S_PlantBomb()
 
+    Log.Debug('PlantBomb')
+
     if (self.actionTime <= 0) then
         local match = MatchState.Get()
         local x,z = match:GetCell(self:GetWorldPosition())
 
         -- Make sure the grid space is empty
         if (match:GetGridObject(x,z) == nil) then
+            Log.Debug('Instantiate bomb!')
             local bomb = self.bombScene:Instantiate()
+            match.field:AddChild(bomb)
             bomb:SetWorldPosition(Vec(x, 0, z))
             match:SetGridObject(x, z, bomb)
         end
