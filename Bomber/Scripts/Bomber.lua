@@ -260,7 +260,6 @@ function Bomber:S_PlantBomb()
             local bomb = self.bombScene:Instantiate()
             match.field:AddChild(bomb)
             bomb:SetWorldPosition(Vec(x, 0, z))
-            match:SetGridObject(x, z, bomb)
         end
     end
 

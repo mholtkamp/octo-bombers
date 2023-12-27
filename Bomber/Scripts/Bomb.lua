@@ -30,11 +30,31 @@ function Bomb:Start()
     self.mesh = self:FindChild('Mesh', true)
     self.material = self.mesh:InstantiateMaterial()
 
+    local match = MatchState.Get()
+    local x,z = match:GetCell(self:GetWorldPosition())
+    self.objectType = ObjectType.Bomb
+    self.x = x
+    self.z = z
+
+    if (match:GetGridObject(x,z) ~= nil) then
+        Log.Error('Bomb is overlapping grid object??')
+    end
+
+    match:SetGridObject(x, z, self)
+
 end
 
 
 function Bomb:Stop()
 
+    Log.Debug('Bomb stop!!')
+    local match = MatchState.Get()
+
+    if (match:GetGridObject(self.x, self.z) ~= self) then
+        Log.Error('Bomb is not in expected grid cell?')
+    end
+
+    match:SetGridObject(self.x, self.z, nil)
 
 end
 
@@ -76,8 +96,9 @@ function Bomb:ExplodeCell(x, z)
     local object = match:GetGridObject(x, z)
 
     if (authority and object and object:HasTag('Box')) then
+        Log.Debug('Destroy box!')
         object:SetPendingDestroy(true)
-        match:SetGridObject(x, z, nil)
+        --match:SetGridObject(x, z, nil)
 
         -- TODO: Drop item
         
