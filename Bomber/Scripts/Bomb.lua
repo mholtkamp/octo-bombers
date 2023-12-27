@@ -23,6 +23,10 @@ function Bomb:Create()
     self.range = 1
     self.velocity = Vec()
     self.exploded = false
+    self.owner = nil
+    self.numOverlappedBombers = 0
+    self.collisionEnabled = false
+
 end
 
 function Bomb:Start()
@@ -58,18 +62,47 @@ function Bomb:Stop()
 
 end
 
+function Bomb:BeginOverlap(this, other)
+
+    if (not self.collisionEnabled and 
+        this == self and
+        other:HasTag('Bomber')) then
+
+        self.numOverlappedBombers = self.numOverlappedBombers + 1
+    end
+
+end
+
+function Bomb:EndOverlap(this, other)
+
+    if (not self.collisionEnabled and
+        this == self and
+        other:HasTag('Bomber')) then
+
+        self.numOverlappedBombers = self.numOverlappedBombers - 1
+    end
+end
+
+
 function Bomb:Tick(deltaTime)
 
     self.time = self.time - deltaTime
 
     -- Pulse mesh and flash material
-    local bombScale = 1.0 + 0.1 * math.sin(self.time * 5)
+    local bombScale = 1.1 + 0.1 * math.sin(self.time * 5)
     local bombRed = 1.0 + 0.4 * math.sin(self.time * 7)
     self.mesh:SetScale(Vec(bombScale, bombScale, bombScale))
     self.material:SetColor(Vec(bombRed, 1, 1, 1))
 
     if (self.time <= 0.0 and Network.IsAuthority()) then
         self:Explode()
+    end
+
+    if (not self.collisionEnabled and 
+        self.numOverlappedBombers == 0 and 
+        Bomb.kExplodeDelay - self.time > 0.3) then
+        self.collisionEnabled = true 
+        self:EnableCollision(true)
     end
 
 end
