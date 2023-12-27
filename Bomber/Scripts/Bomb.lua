@@ -69,10 +69,16 @@ function Bomb:Tick(deltaTime)
     self.material:SetColor(Vec(bombRed, 1, 1, 1))
 
     if (self.time <= 0.0 and Network.IsAuthority()) then
+        self:Explode()
+    end
+
+end
+
+function Bomb:Explode()
+    if (Network.IsAuthority()) then
         self:InvokeNetFunc('M_Explode')
         self:SetPendingDestroy(true)
     end
-
 end
 
 function Bomb:SpawnExplodeParticle(x, z)
@@ -95,14 +101,23 @@ function Bomb:ExplodeCell(x, z)
 
     local object = match:GetGridObject(x, z)
 
-    if (authority and object and object:HasTag('Box')) then
-        Log.Debug('Destroy box!')
-        object:SetPendingDestroy(true)
-        --match:SetGridObject(x, z, nil)
+    if (authority and object) then
 
-        -- TODO: Drop item
-        
-        return false
+        if (object:HasTag('Box') and not object:IsPendingDestroy()) then
+            Log.Debug('Destroy box!')
+            object:SetPendingDestroy(true)
+
+            -- TODO: Drop item
+
+        elseif (object.objectType == ObjectType.Bomb) then 
+            if (not object.exploded) then
+                Log.Debug('Bomb chain!')
+                object:Explode()
+            end
+        else
+            -- Discontinue explosion (blocked)
+            return false
+        end
     end
 
     -- Normal cell, spawn explode particle 
@@ -120,6 +135,8 @@ function Bomb:ExplodeCell(x, z)
         end
     end
 
+    return true
+
 end
 
 function Bomb:M_Explode()
@@ -127,6 +144,7 @@ function Bomb:M_Explode()
     local match = MatchState.Get()
     local authority = Network.IsAuthority()
     local x,z = match:GetCell(self:GetWorldPosition())
+    self.exploded = true
 
     -- Do not explode if cell position is invalid (knocked off the map)
     if (x >= 1 and z >= 1) then
@@ -161,9 +179,6 @@ function Bomb:M_Explode()
 
         -- Hit exact X,Z where bomb was positioned
         self:ExplodeCell(x, z)
-
-        self.exploded = true
-
     end
 
 end

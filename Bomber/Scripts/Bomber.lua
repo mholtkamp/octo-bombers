@@ -259,7 +259,7 @@ function Bomber:S_PlantBomb()
             Log.Debug('Instantiate bomb!')
             local bomb = self.bombScene:Instantiate()
             match.field:AddChild(bomb)
-            bomb:SetWorldPosition(Vec(x, 0, z))
+            bomb:SetWorldPosition(Vec(x, bomb:GetRadius(), z))
         end
     end
 
