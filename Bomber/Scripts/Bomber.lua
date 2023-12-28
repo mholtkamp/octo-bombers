@@ -1,23 +1,40 @@
 Bomber = 
 {
     gravity = -9.8,
+    kDefaultMoveSpeed = 3.5,
+    kMaxPowerupStacks = 5,
 }
 
 function Bomber:Create()
 
+    self.bomberId = 1
+
+    self:Reset()
+end
+
+function Bomber:Reset()
+
     self.moveDir = Vec(0,0,0)
     self.moveVelocity = Vec(0,0,0)
     self.velocity = Vec(0,0,0)
-    self.moveSpeed = 3.5
     self.cellX = 0
     self.cellZ = 0
     self.actionTime = 0.0
-    self.bomberId = 1
     self.netYaw = 0.0
     self.netPosition = Vec()
     self.curMoveSpeed = 0
     self.swingOverlaps = {}
     self.swingTimer = 0.0
+    self.placedBombs = 0
+
+    self.moveSpeed = Bomber.kDefaultMoveSpeed
+    self.bombCount = 1
+    self.bombRange = 1
+
+    self.bombPowerups = 0
+    self.rangePowerups = 0 
+    self.speedPowerups = 0
+
 end
 
 function Bomber:Start()
@@ -53,7 +70,10 @@ function Bomber:GatherReplicatedData()
     {
         { name = 'netYaw', type = DatumType.Float },
         { name = 'netPosition', type = DatumType.Vector },
-        { name = 'curMoveSpeed', type = DatumType.Float }
+        { name = 'curMoveSpeed', type = DatumType.Float },
+        { name = 'bombCount', type = DatumType.Byte },
+        { name = 'bombRange', type = DatumType.Byte },
+        { name = 'moveSpeed', type = DatumType.Float },
     }
 
 end
@@ -285,16 +305,38 @@ end
 
 function Bomber:AddPowerup(powerupType)
 
+    if (not Network.IsAuthority()) then
+        return
+    end
+
     Log.Debug('Get Powerup: ' .. powerupType)
+
+    if (powerupType == PowerupType.BombCount) then
+        self.bombPowerups = Math.Clamp(self.bombPowerups + 1, 0, Bomber.kMaxPowerupStacks)
+        self.bombCount = 1 + self.bombPowerups
+    elseif (powerupType == PowerupType.BombRange) then
+        self.rangePowerups = Math.Clamp(self.rangePowerups + 1, 0, Bomber.kMaxPowerupStacks)
+        self.bombRange = 1 + self.rangePowerups
+    elseif (powerupType == PowerupType.MoveSpeed) then
+        self.speedPowerups = Math.Clamp(self.speedPowerups + 1, 0, Bomber.kMaxPowerupStacks)
+        self.moveSpeed = Bomber.kDefaultMoveSpeed + 0.5 * self.speedPowerups
+    end
 
 end
 
+function Bomber:DecrementPlacedBomb()
+
+    self.placedBombs = math.max(self.placedBombs - 1, 0)
+
+end
 
 function Bomber:S_PlantBomb()
 
     Log.Debug('PlantBomb')
 
-    if (self.actionTime <= 0) then
+    if (self.actionTime <= 0 and
+        self.placedBombs < self.bombCount) then
+
         local match = MatchState.Get()
         local x,z = match:GetCell(self:GetWorldPosition())
 
@@ -304,6 +346,9 @@ function Bomber:S_PlantBomb()
             local bomb = self.bombScene:Instantiate()
             match.field:AddChild(bomb)
             bomb:SetWorldPosition(Vec(x, bomb:GetRadius() + 0.04, z))
+            bomb:SetRange(self.bombRange)
+            bomb:SetBomber(self)
+            self.placedBombs = self.placedBombs + 1
         end
     end
 

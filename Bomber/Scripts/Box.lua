@@ -2,7 +2,7 @@ Script.Require("GridObject")
 
 Box = 
 {
-    kDropChance = 0.3,
+    kDropChance = 0.5,
 
     powerupScene = LoadAsset('SC_Powerup')
 }
@@ -31,7 +31,6 @@ function Box:DropPowerup()
     local roll = Math.RandRange(0, 1)
 
     if (roll < 0.3) then
-        Log.Error('Dropping powerup!')
         local match = MatchState.Get()
         local powerupType = Math.RandRangeInt(1, PowerupType.Count)
 

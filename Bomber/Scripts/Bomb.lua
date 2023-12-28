@@ -12,6 +12,15 @@ function Bomb:GatherProperties()
     }
 end
 
+function Bomb:GatherReplicatedData()
+
+    return 
+    {
+        { name = 'range', type = DatumType.Byte },
+    }
+
+end
+
 function Bomb:GatherNetFuncs()
     return
     {
@@ -85,6 +94,13 @@ function Bomb:EndOverlap(this, other)
     end
 end
 
+function Bomb:SetRange(range)
+
+    if (Network.IsAuthority()) then
+        self.range = range
+    end
+
+end
 
 function Bomb:Tick(deltaTime)
 
@@ -183,8 +199,17 @@ end
 function Bomb:Explode()
     if (Network.IsAuthority()) then
         self:InvokeNetFunc('M_Explode')
+
+        if (self.bomber) then
+            self.bomber:DecrementPlacedBomb()
+        end
+
         self:SetPendingDestroy(true)
     end
+end
+
+function Bomb:SetBomber(bomber)
+    self.bomber = bomber 
 end
 
 function Bomb:Launch(dir)
@@ -207,8 +232,6 @@ function Bomb:Launch(dir)
                 axisDir = Vec(0, 0, -1)
             end
         end
-
-        Log.Debug('axisDir = ' .. tostring(axisDir))
 
         self.velocity = axisDir * Bomb.kLaunchSpeed
 
