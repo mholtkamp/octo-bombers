@@ -19,4 +19,13 @@ ObjectType =
     Box3 = 6,
 }
 
+PowerupType =
+{
+    BombCount = 1,
+    BombRange = 2,
+    MoveSpeed = 3,
+
+    Count = 3,   
+}
+
 Script.Require("GameState.lua")

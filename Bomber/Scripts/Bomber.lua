@@ -283,6 +283,12 @@ function Bomber:Kill()
 
 end
 
+function Bomber:AddPowerup(powerupType)
+
+    Log.Debug('Get Powerup: ' .. powerupType)
+
+end
+
 
 function Bomber:S_PlantBomb()
 

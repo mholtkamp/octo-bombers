@@ -239,10 +239,8 @@ function Bomb:ExplodeCell(x, z)
 
         if (object:HasTag('Box') and not object:IsPendingDestroy()) then
             Log.Debug('Destroy box!')
+            object:DropPowerup()
             object:SetPendingDestroy(true)
-
-            -- TODO: Drop item
-
         elseif (object.objectType == ObjectType.Bomb) then 
             if (not object.exploded) then
                 Log.Debug('Bomb chain!')
