@@ -26,6 +26,7 @@ function Bomber:Reset()
     self.swingOverlaps = {}
     self.swingTimer = 0.0
     self.placedBombs = 0
+    self.alive = false
 
     self.moveSpeed = Bomber.kDefaultMoveSpeed
     self.bombCount = 1
@@ -43,7 +44,7 @@ function Bomber:Start()
     self.camera = self:FindChild('Camera', true)
     self.swingSphere = self:FindChild('SwingSphere', true)
     
-    if (self.camera) then
+    if (self:IsLocallyControlled() and self.camera) then
         world:SetActiveCamera(self.camera)
     end
 
@@ -130,6 +131,24 @@ function Bomber:IsLocallyControlled()
 
     return locallyControlled
 
+end
+
+function Bomber:SetAlive(alive)
+
+    if (alive) then
+        self:Reset()
+    end
+
+    self:EnableCollision(alive)
+    self:EnableOverlaps(alive)
+    self:SetVisible(alive)
+
+    self.alive = alive 
+
+end
+
+function Bomber:IsAlive()
+    return self.alive
 end
 
 function Bomber:UpdateMovement(deltaTime)
@@ -226,7 +245,7 @@ end
 
 function Bomber:UpdateMotion(deltaTime)
 
-    if (self:IsLocallyControlled()) then
+    if (Network.IsLocal() or self:IsLocallyControlled()) then
 
         -- Gravity
         self.velocity.y = self.velocity.y + deltaTime * Bomber.gravity

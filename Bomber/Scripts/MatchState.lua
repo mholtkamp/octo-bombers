@@ -4,6 +4,19 @@ MatchState =
 {
     kNumBoxVariants = 3,
     current = nil,
+
+    kSpawnRatiosXZ = 
+    {
+        { x = 0.0, z = 0.0 },
+        { x = 1.0, z = 0.0 },
+        { x = 0.0, z = 1.0 },
+        { x = 1.0, z = 1.0 },
+
+        { x = 0.5, z = 0.0 },
+        { x = 1.0, z = 0.5 },
+        { x = 0.0, z = 0.5 },
+        { x = 0.5, z = 1.0 },
+    },
 }
 
 MatchState.Get = function()
@@ -18,6 +31,7 @@ function MatchState:Create()
 
     self.bombers = {}
     self.numBombers = 4
+    self.enableBots = true
 
     self.boxSpawnChance = 0.3
     self.blockSpawnChance = 0.2
@@ -36,6 +50,7 @@ function MatchState:GatherProperties()
         { name = "blockScene", type = DatumType.Asset },
         { name = "boxScene", type = DatumType.Asset },
         { name = "treeScene", type = DatumType.Asset },
+        { name = "bomberScene", type = DatumType.Asset },
     }
 end
 
@@ -61,13 +76,16 @@ end
 
 function MatchState:Start()
 
-    self:ResetMatch()
-
     if (MatchState.current ~= nil) then
         Engine.Alert('Two match states created at the same time???')
     end
 
     MatchState.current = self
+
+    if (Network.IsAuthority()) then
+        self:InstantiateBombers()
+        self:ResetMatch()
+    end
 
 end
 
@@ -92,6 +110,11 @@ function MatchState:GetCell(worldPos)
 end
 
 function MatchState:ResetMatch()
+
+    -- Should only be called by server.
+    if (not Network.IsAuthority()) then
+        return
+    end
 
     if (self.field) then
         self.field:SetPendingDestroy(true)
@@ -134,7 +157,60 @@ function MatchState:ResetMatch()
         end
     end
 
-    -- Spawn / Place Bombers
+    -- Place Bombers
+    local isLocalGame = Network.IsLocal()
+    local numSpawnedBombers = 0
+
+    for i = 1, self.numBombers do 
+        local bomber = self.bombers[i]
+        local spawn = false 
+
+        if (self.enableBots) then
+            -- Just reenable all players
+            spawn = true
+        else
+            -- No bots, so only enable bombers with owning hosts
+            spawn = (bomber:GetOwningHost() ~= 0)
+        end
+
+        if (spawn) then
+            numSpawnedBombers = numSpawnedBombers + 1
+            local spawnRatioXZ = MatchState.kSpawnRatiosXZ[numSpawnedBombers]
+            local spawnPos = Vec(spawnRatioXZ.x * self.gridSizeX, 1.0, spawnRatioXZ.z * self.gridSizeZ)
+            spawnPos.x = Math.Clamp(spawnPos.x, 1, self.gridSizeX - 1)
+            spawnPos.z = Math.Clamp(spawnPos.z, 1, self.gridSizeZ - 1)
+            bomber:SetWorldPosition(spawnPos)
+            bomber:SetAlive(true)
+
+            Log.Debug('Bomber ' .. bomber.bomberId .. ' pos = ' .. tostring(bomber:GetWorldPosition()))
+
+            -- Clear out any grid objects in the nearby cells
+            
+        else
+            bomber:SetAlive(false)
+        end
+    end
+
+end
+
+function MatchState:InstantiateBombers()
+
+    -- Should only be called on the server
+    if (not Network.IsAuthority()) then
+        return 
+    end
+
+    if (#self.bombers ~= 0) then
+        Engine.Alert('Bombers array should be empty.')
+    end
+
+    -- Spawn the max number of bombers, but disable them 
+    for i = 1, self.numBombers do 
+        self.bombers[i] = self.bomberScene:Instantiate()
+        world:GetRootNode():AddChild(self.bombers[i])
+        self.bombers[i].bomberId = i
+        self.bombers[i]:SetAlive(false)
+    end
 
 end
 
