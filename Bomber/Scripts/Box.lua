@@ -30,7 +30,7 @@ function Box:DropPowerup()
 
     local roll = Math.RandRange(0, 1)
 
-    if (roll < 0.3) then
+    if (roll < Box.kDropChance) then
         local match = MatchState.Get()
         local powerupType = Math.RandRangeInt(1, PowerupType.Count)
 

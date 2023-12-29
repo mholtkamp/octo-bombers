@@ -260,13 +260,15 @@ function Bomb:ExplodeCell(x, z)
 
     if (authority and object) then
 
-        if (object:HasTag('Box') and not object:IsPendingDestroy()) then
-            Log.Debug('Destroy box!')
-            object:DropPowerup()
-            object:SetPendingDestroy(true)
+        if (object:HasTag('Box')) then
+            if (not object:IsPendingDestroy()) then
+                object:DropPowerup()
+                object:SetPendingDestroy(true)
+                self:SpawnExplodeParticle(x, z)
+            end
+            return false
         elseif (object.objectType == ObjectType.Bomb) then 
             if (not object.exploded) then
-                Log.Debug('Bomb chain!')
                 object:Explode()
             end
         else
