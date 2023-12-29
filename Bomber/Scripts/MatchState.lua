@@ -177,14 +177,33 @@ function MatchState:ResetMatch()
             numSpawnedBombers = numSpawnedBombers + 1
             local spawnRatioXZ = MatchState.kSpawnRatiosXZ[numSpawnedBombers]
             local spawnPos = Vec(spawnRatioXZ.x * self.gridSizeX, 1.0, spawnRatioXZ.z * self.gridSizeZ)
-            spawnPos.x = Math.Clamp(spawnPos.x, 1, self.gridSizeX - 1)
-            spawnPos.z = Math.Clamp(spawnPos.z, 1, self.gridSizeZ - 1)
+            spawnPos.x = Math.Clamp(spawnPos.x, 1, self.gridSizeX)
+            spawnPos.z = Math.Clamp(spawnPos.z, 1, self.gridSizeZ)
+
+            local xOff = -2 * (spawnRatioXZ.x - 0.5)
+            local zOff = -2 * (spawnRatioXZ.z - 0.5)
+            spawnPos.x = spawnPos.x + xOff
+            spawnPos.z = spawnPos.z + zOff
+
             bomber:SetWorldPosition(spawnPos)
             bomber:SetAlive(true)
 
-            Log.Debug('Bomber ' .. bomber.bomberId .. ' pos = ' .. tostring(bomber:GetWorldPosition()))
-
             -- Clear out any grid objects in the nearby cells
+            local cellX, cellZ = self:GetCell(spawnPos)
+            Log.Debug('cellX = ' .. cellX .. '  cellZ = ' .. cellZ)
+            for x = cellX - 1, cellX + 1 do
+                for z = cellZ - 1, cellZ + 1 do
+                    if (x >= 1 and x <= self.gridSizeX and
+                        z >= 1 and z <= self.gridSizeZ) then
+                        
+                            local gridObj = self:GetGridObject(x, z)
+                            if (gridObj) then
+                                gridObj:SetPendingDestroy(true)
+                                self:SetGridObject(x, z, nil)
+                            end
+                    end
+                end
+            end
             
         else
             bomber:SetAlive(false)
