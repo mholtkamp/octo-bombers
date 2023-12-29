@@ -71,6 +71,10 @@ function Bomb:Stop()
 
     match:SetGridObject(self.x, self.z, nil)
 
+    if (self.bomber) then
+        self.bomber:DecrementPlacedBomb()
+    end
+
 end
 
 function Bomb:BeginOverlap(this, other)
@@ -162,6 +166,10 @@ function Bomb:UpdateCell(deltaTime)
         end
     end
 
+    if (self.x == -1 or self.z == -1) then
+        self:SetPendingDestroy(true)
+    end
+
 end
 
 function Bomb:UpdateMovement(deltaTime)
@@ -185,7 +193,7 @@ function Bomb:UpdateMovement(deltaTime)
             self.velocity = self.velocity * speed
         end
 
-        if (speed < 0.3) then
+        if (speed < 0.3 and self.x ~= -1 and self.z ~= -1) then
             -- Gravitate toward cell position
             local curPos = self:GetWorldPosition()
             local targetPos = Vec(self.x, curPos.y, self.z)
@@ -199,11 +207,6 @@ end
 function Bomb:Explode()
     if (Network.IsAuthority()) then
         self:InvokeNetFunc('M_Explode')
-
-        if (self.bomber) then
-            self.bomber:DecrementPlacedBomb()
-        end
-
         self:SetPendingDestroy(true)
     end
 end
