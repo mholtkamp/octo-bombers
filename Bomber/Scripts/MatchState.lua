@@ -33,8 +33,8 @@ function MatchState:Create()
     self.numBombers = 4
     self.enableBots = true
 
-    self.boxSpawnChance = 0.3
-    self.blockSpawnChance = 0.2
+    self.objectSpawnChance = 0.8
+    self.boxSpawnChance = 0.5
     self.treeRatio = 0.3
 
 end
@@ -45,6 +45,9 @@ function MatchState:GatherProperties()
     {
         { name = "gridSizeX", type = DatumType.Integer },
         { name = "gridSizeZ", type = DatumType.Integer },
+        { name = "objectSpawnChance", type = DatumType.Float },
+        { name = "boxSpawnChance", type = DatumType.Float },
+        { name = "treeRatio", type = DatumType.Float },
 
         { name = "platformMesh", type = DatumType.Asset },
         { name = "blockScene", type = DatumType.Asset },
@@ -243,17 +246,21 @@ function MatchState:GenerateGrid()
             local gridIdx = x + z * self.gridSizeX
 
             local roll = Math.RandRange(0.0, 1.0)
-            local objectType = ObjectType.None
 
-            if (roll < self.boxSpawnChance) then
-                objectType = ObjectType.Box1 + Math.RandRangeInt(0, MatchState.kNumBoxVariants - 1)
-            elseif (roll < self.boxSpawnChance + self.blockSpawnChance) then
-                local useTree = Math.RandRange(0, 1) < self.treeRatio
-                objectType = useTree and ObjectType.Tree or ObjectType.Block
-            end
+            if (roll < self.objectSpawnChance) then
 
-            if (objectType ~= ObjectType.None) then
-                self:SpawnObject(x, z, objectType)
+                local objectType = ObjectType.None
+                local boxRoll = Math.RandRange(0, 1)
+                if (boxRoll < self.boxSpawnChance) then
+                    objectType = ObjectType.Box1 + Math.RandRangeInt(0, MatchState.kNumBoxVariants - 1)
+                else
+                    local useTree = Math.RandRange(0, 1) < self.treeRatio
+                    objectType = useTree and ObjectType.Tree or ObjectType.Block
+                end
+
+                if (objectType ~= ObjectType.None) then
+                    self:SpawnObject(x, z, objectType)
+                end
             end
 
         end
