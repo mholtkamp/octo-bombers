@@ -27,7 +27,7 @@ end
 
 function GridObject:Start()
 
-    local match = MatchState.Get()
+    local match = GameState:GetMatch()
     match:SetGridObject(self.x, self.z, self)
     self:SetWorldPosition(Vec(self.x, 0, self.z))
 
@@ -36,7 +36,7 @@ end
 
 function GridObject:Stop()
 
-    local match = MatchState.Get()
+    local match = GameState:GetMatch()
     local gridObj = match:GetGridObject(self.x, self.z)
 
     if (gridObj == self) then

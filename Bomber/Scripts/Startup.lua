@@ -28,4 +28,5 @@ PowerupType =
     Count = 3,   
 }
 
-Script.Require("GameState.lua")
+Script.Load("GameState.lua")
+GameState:Init()

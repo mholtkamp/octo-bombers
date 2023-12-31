@@ -300,7 +300,7 @@ end
 
 function Bomber:UpdateCell(deltaTime)
 
-    local match = MatchState.Get()
+    local match = GameState:GetMatch()
     local worldPos = self:GetWorldPosition()
     self.cellX, self.cellZ = match:GetCell(worldPos)
 
@@ -356,7 +356,7 @@ function Bomber:S_PlantBomb()
     if (self.actionTime <= 0 and
         self.placedBombs < self.bombCount) then
 
-        local match = MatchState.Get()
+        local match = GameState:GetMatch()
         local x,z = match:GetCell(self:GetWorldPosition())
 
         -- Make sure the grid space is empty

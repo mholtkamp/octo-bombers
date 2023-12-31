@@ -45,7 +45,7 @@ function Bomb:Start()
     self.mesh = self:FindChild('Mesh', true)
     self.material = self.mesh:InstantiateMaterial()
 
-    local match = MatchState.Get()
+    local match = GameState:GetMatch()
     local x,z = match:GetCell(self:GetWorldPosition())
     self.objectType = ObjectType.Bomb
     self.x = x
@@ -63,7 +63,7 @@ end
 function Bomb:Stop()
 
     Log.Debug('Bomb stop!!')
-    local match = MatchState.Get()
+    local match = GameState:GetMatch()
 
     if (match:GetGridObject(self.x, self.z) ~= self) then
         Log.Error('Bomb is not in expected grid cell?')
@@ -149,7 +149,7 @@ end
 
 function Bomb:UpdateCell(deltaTime)
 
-    local match = MatchState.Get()
+    local match = GameState:GetMatch()
     local curX, curZ = match:GetCell(self:GetWorldPosition())
 
     if (self.x ~= curX or self.z ~= curZ) then
@@ -249,7 +249,7 @@ end
 
 function Bomb:ExplodeCell(x, z)
 
-    local match = MatchState.Get()
+    local match = GameState:GetMatch()
     local authority = Network.IsAuthority()
     local dimX = match.gridSizeX 
     local dimZ = match.gridSizeZ
@@ -301,7 +301,7 @@ end
 
 function Bomb:M_Explode()
 
-    local match = MatchState.Get()
+    local match = GameState:GetMatch()
     local authority = Network.IsAuthority()
     local x,z = match:GetCell(self:GetWorldPosition())
     self.exploded = true

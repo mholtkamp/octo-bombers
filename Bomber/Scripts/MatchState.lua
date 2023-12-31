@@ -19,13 +19,9 @@ MatchState =
     },
 }
 
-MatchState.Get = function()
-    return MatchState.current
-end
-
-
 function MatchState:Create()
 
+    self.grid = {}
     self.gridSizeX = 32
     self.gridSizeZ = 32
 
@@ -49,7 +45,7 @@ function MatchState:GatherProperties()
         { name = "boxSpawnChance", type = DatumType.Float },
         { name = "treeRatio", type = DatumType.Float },
 
-        { name = "platformMesh", type = DatumType.Asset },
+        { name = "islandScene", type = DatumType.Asset },
         { name = "blockScene", type = DatumType.Asset },
         { name = "boxScene", type = DatumType.Asset },
         { name = "treeScene", type = DatumType.Asset },
@@ -79,11 +75,11 @@ end
 
 function MatchState:Start()
 
-    if (MatchState.current ~= nil) then
+    if (GameState:GetMatch() ~= nil) then
         Engine.Alert('Two match states created at the same time???')
     end
 
-    MatchState.current = self
+    GameState:SetMatch(self)
 
     if (Network.IsAuthority()) then
         self:InstantiateBombers()
@@ -94,7 +90,34 @@ end
 
 function MatchState:Stop()
 
-    MatchState.current = nil
+    GameState:SetMatch(nil)
+
+end
+
+function MatchState:NetConnect(client)
+
+    -- If we already have bombers, assign the client to a bomber.
+    if (self.bombers) then
+        for i = 1, #self.bombers do
+            if (self.bombers[i]:GetOwningHost() == 0) then
+                self.bombers[i]:SetOwningHost(client.id)
+                self.bombers[i]:ForceReplication()
+            end
+        end
+    end
+
+end
+
+function MatchState:NetDisconnect(client)
+
+    -- If the client was assigned a bomber, unset the owning host.
+    if (self.bombers) then
+        for i = 1, #self.bombers do
+            if (self.bombers[i]:GetOwningHost() == client.id) then
+                self.bombers[i]:SetOwningHost(0)
+            end
+        end
+    end
 
 end
 
@@ -144,19 +167,12 @@ function MatchState:ResetMatch()
     -- Spawn Platforms
     for x = 1, numPlatformsX do 
         for z = 1, numPlatformsZ do
-            local platform = self.field:CreateChild('StaticMesh3D')
+            local platform = self.islandScene:Instantiate()
+            self.field:AddChild(platform)
             local xPos = (x - 1) * 4 + 1
             local zPos = (z - 1) * 4 + 1
             platform:SetWorldPosition(Vec(xPos, 0, zPos))
-            platform:EnableTriangleCollision(true)
-            platform:EnableCollision(true)
-            platform:SetCollisionGroup(BomberCollision.Environment)
-            platform:SetCollisionMask(~BomberCollision.Environment)
-            platform:SetStaticMesh(self.platformMesh)
-            platform:SetReplicate(true)
-            platform:SetReplicateTransform(true)
             platform:ForceReplication()
-            platform:SetName('Island')
         end
     end
 
