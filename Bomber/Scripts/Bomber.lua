@@ -93,7 +93,7 @@ function Bomber:GatherNetFuncs()
 
         { name = "C_ForceWorldPosition", type = NetFuncType.Client, reliable = true},
 
-        { name = 'M_SwingCane', type = NetFuncType.Client, reliable = false},
+        { name = 'M_SwingCane', type = NetFuncType.Multicast, reliable = false},
     }
 
 end
