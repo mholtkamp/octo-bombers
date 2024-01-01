@@ -7,6 +7,8 @@ function Powerup:Start()
 
     self.mesh = self:FindChild('Mesh', true)
 
+    self:UpdateMesh()
+
 end
 
 function Powerup:GatherReplicatedData()
@@ -47,20 +49,26 @@ function Powerup:GetType()
     return self.powerupType
 end
 
-function Powerup:OnRep_powerupType()
+function Powerup:UpdateMesh()
 
-    local mesh = nil
-
-    Log.Debug('PowerupType = ' .. self.powerupType)
-
-    if (self.powerupType == PowerupType.BombCount) then 
-        mesh = LoadAsset('SM_PowerupBomb')
-    elseif (self.powerupType == PowerupType.BombRange) then
-        mesh = LoadAsset('SM_PowerupFire')
-    elseif (self.powerupType == PowerupType.MoveSpeed) then
-        mesh = LoadAsset('SM_PowerupSpeed')
+    if (self.mesh) then
+        local mesh = nil
+    
+        if (self.powerupType == PowerupType.BombCount) then 
+            mesh = LoadAsset('SM_PowerupBomb')
+        elseif (self.powerupType == PowerupType.BombRange) then
+            mesh = LoadAsset('SM_PowerupFire')
+        elseif (self.powerupType == PowerupType.MoveSpeed) then
+            mesh = LoadAsset('SM_PowerupSpeed')
+        end
+    
+        self.mesh:SetStaticMesh(mesh)
     end
 
-    self.mesh:SetStaticMesh(mesh)
+end
+
+function Powerup:OnRep_powerupType()
+
+    self:UpdateMesh()
 
 end
