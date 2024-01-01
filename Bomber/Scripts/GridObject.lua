@@ -18,10 +18,14 @@ function GridObject:GatherReplicatedData()
 
     return
     {
-        { name = "objectType", type = DatumType.Byte },
+        { name = "objectType", type = DatumType.Byte, onRep = 'OnRep_objectType' },
         { name = "x", type = DatumType.Byte },
         { name = "z", type = DatumType.Byte },
     }
+
+end
+
+function GridObject:OnRep_objectType()
 
 end
 

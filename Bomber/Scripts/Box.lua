@@ -12,12 +12,24 @@ Script.Extend(Box, GridObject)
 function Box:Start()
 
     GridObject.Start(self)
+    self:UpdateMaterial()
+
+end
+
+function Box:UpdateMaterial()
 
     if (self.objectType == ObjectType.Box2) then
         self:SetMaterialOverride('M_GiftBox2')
     elseif (self.objectType == ObjectType.Box3) then
         self:SetMaterialOverride('M_GiftBox3')
     end
+
+end
+
+function Box:OnRep_objectType()
+
+    GridObject.OnRep_objectType(self)
+    self:UpdateMaterial()
 
 end
 
