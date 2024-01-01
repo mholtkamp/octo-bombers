@@ -48,6 +48,10 @@ function Bomber:Start()
         world:SetActiveCamera(self.camera)
     end
 
+    if (self:IsOwned()) then
+        self:SetWorldPosition(self.netPosition)
+    end
+
 end
 
 function Bomber:Stop()
@@ -70,7 +74,7 @@ function Bomber:GatherReplicatedData()
     return 
     {
         { name = 'netYaw', type = DatumType.Float },
-        { name = 'netPosition', type = DatumType.Vector },
+        { name = 'netPosition', type = DatumType.Vector, onRep = 'OnRep_netPosition'},
         { name = 'curMoveSpeed', type = DatumType.Float },
         { name = 'bombCount', type = DatumType.Byte },
         { name = 'bombRange', type = DatumType.Byte },
@@ -86,6 +90,8 @@ function Bomber:GatherNetFuncs()
         { name = 'S_PlantBomb', type = NetFuncType.Server, reliable = true},
         { name = 'S_SwingCane', type = NetFuncType.Server, reliable = true},
         { name = 'S_SyncTransform', type = NetFuncType.Server, reliable = false},
+
+        { name = "C_ForceWorldPosition", type = NetFuncType.Client, reliable = true},
 
         { name = 'M_SwingCane', type = NetFuncType.Client, reliable = false},
     }
@@ -104,6 +110,29 @@ function Bomber:EndOverlap(this, other)
 
     if (this == self.swingSphere and other ~= self) then
         self.swingOverlaps[other] = nil
+    end
+
+end
+
+function Bomber:OwnerChanged()
+    
+    self.justPossessed = true
+
+    if (self:IsOwned()) then
+        self:SetWorldPosition(self.netPosition)
+        world:SetActiveCamera(self.camera)
+    end
+
+end
+
+function Bomber:OnRep_netPosition()
+
+    if (not self.netPositionSet) then
+        self.netPositionSet = true
+
+        if (self:IsOwned()) then
+            self:SetWorldPosition(self.netPosition)
+        end
     end
 
 end
@@ -133,6 +162,13 @@ function Bomber:IsLocallyControlled()
 
 end
 
+function Bomber:IsBot()
+    local owningHost = self:GetOwningHost()
+    local isBot = (owningHost == NetHost.Invalid) and (self.bomberId ~= 1)
+
+    return isBot
+end
+
 function Bomber:SetAlive(alive)
 
     if (alive) then
@@ -149,6 +185,12 @@ end
 
 function Bomber:IsAlive()
     return self.alive
+end
+
+function Bomber:ForceWorldPosition(position)
+    self:SetWorldPosition(position)
+    self.netPosition = position
+    self:InvokeNetFunc('C_ForceWorldPosition', position)
 end
 
 function Bomber:UpdateMovement(deltaTime)
@@ -245,7 +287,9 @@ end
 
 function Bomber:UpdateMotion(deltaTime)
 
-    if (Network.IsLocal() or self:IsLocallyControlled()) then
+    local isServer = Network.IsServer()
+
+    if (self:IsLocallyControlled() or (isServer and self:IsBot())) then
 
         -- Gravity
         self.velocity.y = self.velocity.y + deltaTime * Bomber.gravity
@@ -264,12 +308,9 @@ function Bomber:UpdateMotion(deltaTime)
         -- Move in X/Z plane next (for smoother movement along obstacles)
         self:Move(Vec(1, 0, 1), deltaTime)
 
-    else
-        
+    else 
         self:SetWorldPosition(self.netPosition)
-
     end
-
 end
 
 function Bomber:UpdateAnimation(deltaTime)
@@ -309,9 +350,7 @@ end
 function Bomber:UpdateNetwork(deltaTime)
 
     if (self:IsLocallyControlled()) then
-
         self:InvokeNetFunc('S_SyncTransform', self:GetWorldPosition(), self.mesh:GetWorldRotation().y, self.curMoveSpeed)
-
     end
     
 end
@@ -390,6 +429,13 @@ function Bomber:S_SyncTransform(position, yaw, speed)
     self.netPosition = position 
     self.netYaw = yaw
     self.curMoveSpeed = speed
+end
+
+function Bomber:C_ForceWorldPosition(position)
+
+    self:SetWorldPosition(position)
+    self.netPosition = position
+
 end
 
 function Bomber:M_SwingCane()

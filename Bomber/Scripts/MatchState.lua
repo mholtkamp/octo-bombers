@@ -102,6 +102,7 @@ function MatchState:NetConnect(client)
             if (self.bombers[i]:GetOwningHost() == 0) then
                 self.bombers[i]:SetOwningHost(client.id)
                 self.bombers[i]:ForceReplication()
+                break
             end
         end
     end
@@ -149,7 +150,6 @@ function MatchState:ResetMatch()
 
     self.field = world:SpawnNode('Node3D')
     self.field:SetReplicate(true)
-    self.field:SetReplicateTransform(true)
     self.field:SetName("Field")
     self.field:SetWorldPosition(Vec(0,0,0))
 
@@ -204,8 +204,8 @@ function MatchState:ResetMatch()
             spawnPos.x = spawnPos.x + xOff
             spawnPos.z = spawnPos.z + zOff
 
-            bomber:SetWorldPosition(spawnPos)
             bomber:SetAlive(true)
+            bomber:ForceWorldPosition(spawnPos)
 
             -- Clear out any grid objects in the nearby cells
             local cellX, cellZ = self:GetCell(spawnPos)
@@ -248,6 +248,11 @@ function MatchState:InstantiateBombers()
         world:GetRootNode():AddChild(self.bombers[i])
         self.bombers[i].bomberId = i
         self.bombers[i]:SetAlive(false)
+    end
+
+    -- If this is a net-game, then we need to assign the owning host for the server-controlled bomber.
+    if (Network.IsServer()) then
+        self.bombers[1]:SetOwningHost(NetHost.Server)
     end
 
 end
