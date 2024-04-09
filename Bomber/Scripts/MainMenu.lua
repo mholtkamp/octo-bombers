@@ -18,4 +18,13 @@ function MainMenu:Start()
     self.optCreate:SetActivateFunc(createFunc)
     self.optJoin:SetActivateFunc(joinFunc)
 
+    Renderer.EnableStatsOverlay(true)
+end
+
+function MainMenu:Tick(deltaTime)
+
+    if (Input.IsGamepadButtonJustDown(Gamepad.Start)) then
+        Log.Debug('Starting Solo Match')
+        GameState:StartSoloMatch()
+    end
 end
