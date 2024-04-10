@@ -243,7 +243,7 @@ end
 
 function Bomb:SpawnExplodeParticle(x, z)
 
-    world:SpawnParticle(self.explodeParticle, Vec(x, 0, z))
+    self.world:SpawnParticle(self.explodeParticle, Vec(x, 0, z))
 
 end
 

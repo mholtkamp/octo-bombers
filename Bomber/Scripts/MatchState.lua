@@ -148,7 +148,7 @@ function MatchState:ResetMatch()
         self.field = nil
     end
 
-    self.field = world:SpawnNode('Node3D')
+    self.field = self.world:SpawnNode('Node3D')
     self.field:SetReplicate(true)
     self.field:SetName("Field")
     self.field:SetWorldPosition(Vec(0,0,0))
@@ -245,7 +245,7 @@ function MatchState:InstantiateBombers()
     -- Spawn the max number of bombers, but disable them 
     for i = 1, self.numBombers do 
         self.bombers[i] = self.bomberScene:Instantiate()
-        world:GetRootNode():AddChild(self.bombers[i])
+        self.world:GetRootNode():AddChild(self.bombers[i])
         self.bombers[i].bomberId = i
         self.bombers[i]:SetAlive(false)
     end

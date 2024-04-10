@@ -18,7 +18,6 @@ function MainMenu:Start()
     self.optCreate:SetActivateFunc(createFunc)
     self.optJoin:SetActivateFunc(joinFunc)
 
-    Renderer.EnableStatsOverlay(true)
 end
 
 function MainMenu:Tick(deltaTime)

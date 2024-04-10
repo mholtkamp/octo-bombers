@@ -45,7 +45,7 @@ function Bomber:Start()
     self.swingSphere = self:FindChild('SwingSphere', true)
     
     if (self:IsLocallyControlled() and self.camera) then
-        world:SetActiveCamera(self.camera)
+        self.world:SetActiveCamera(self.camera)
     end
 
     if (self:IsOwned()) then
@@ -120,7 +120,7 @@ function Bomber:OwnerChanged()
 
     if (self:IsOwned()) then
         self:SetWorldPosition(self.netPosition)
-        world:SetActiveCamera(self.camera)
+        self.world:SetActiveCamera(self.camera)
     end
 
 end

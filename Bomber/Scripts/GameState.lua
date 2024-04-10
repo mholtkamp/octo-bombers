@@ -41,7 +41,12 @@ function GameState:StartSoloMatch()
 
     self:EnableSessionSearch(false)
 
-    Engine.GetWorld():LoadScene('SC_Match')
+    Engine.GetWorld(1):LoadScene('SC_Match')
+
+    -- Testing second screen functionality
+    if (Engine.GetPlatform() == "3DS") then
+        Engine.GetWorld(2):LoadScene('SC_Assets')
+    end
 
 end
 
