@@ -215,7 +215,22 @@ function Bomber:UpdateMovement(deltaTime)
             self.moveDir.z = self.moveDir.z + 1.0
         end
 
+        local leftAxisX = Input.GetGamepadAxisValue(Gamepad.AxisLX)
+        local leftAxisY = Input.GetGamepadAxisValue(Gamepad.AxisLY)
+
+        -- Only add analog stick input beyond a deadzone limit
+        if (math.abs(leftAxisX) > 0.1) then
+            self.moveDir.x = self.moveDir.x + leftAxisX
+        end
+        if (math.abs(leftAxisY) > 0.1) then
+            self.moveDir.z = self.moveDir.z - leftAxisY
+        end
+
+        -- Ensure length of moveDir is at most 1.0.
+        local moveMag = self.moveDir:Magnitude()
+        moveMag = math.min(moveMag, 1.0)
         self.moveDir = (self.actionTime <= 0) and self.moveDir:Normalize() or Vec(0,0,0)
+        self.moveDir = self.moveDir * moveMag
 
     end
 

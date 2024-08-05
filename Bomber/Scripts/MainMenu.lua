@@ -6,6 +6,8 @@ MainMenu =
 
 function MainMenu:Start()
 
+    Renderer.EnableStatsOverlay(true)
+
     self.optSolo = self:FindChild('OptSolo', true)
     self.optCreate = self:FindChild('OptCreateNet', true)
     self.optJoin = self:FindChild('OptJoinNet', true)
