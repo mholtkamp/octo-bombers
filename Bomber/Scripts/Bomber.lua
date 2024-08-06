@@ -1,3 +1,5 @@
+Script.Require('GameState.lua')
+
 Bomber = 
 {
     gravity = -9.8,
@@ -145,6 +147,7 @@ function Bomber:Tick(deltaTime)
     self:UpdateAnimation(deltaTime)
     self:UpdateOrientation(deltaTime)
     self:UpdateCell(deltaTime)
+    self:UpdateCamera(deltaTime)
     self:UpdateNetwork(deltaTime)
 
 end
@@ -271,6 +274,18 @@ function Bomber:UpdateAction(deltaTime)
             self.swingSphere:EnableOverlaps(false)
         end
     end
+
+    if (self:IsLocallyControlled()) then
+        
+        if (Input.IsGamepadPressed(Gamepad.Y)) then
+            GameState.statsEnabled = not GameState.statsEnabled
+            Renderer.EnableStatsOverlay(GameState.statsEnabled)
+        end
+        
+        if (Input.IsGamepadPressed(Gamepad.Start)) then
+            Engine.GetWorld(1):LoadScene('SC_MainMenu')
+        end
+    end
 end
 
 function Bomber:Move(axes, deltaTime)
@@ -359,6 +374,29 @@ function Bomber:UpdateCell(deltaTime)
     local match = GameState:GetMatch()
     local worldPos = self:GetWorldPosition()
     self.cellX, self.cellZ = match:GetCell(worldPos)
+
+end
+
+function Bomber:UpdateCamera(deltaTime)
+
+    if (not self:IsLocallyControlled()) then
+        return
+    end
+
+    local axisRX = Input.GetGamepadAxisValue(Gamepad.AxisRX)
+    local axisRY = Input.GetGamepadAxisValue(Gamepad.AxisRY)
+
+    if (math.abs(axisRY) > 0.2) then
+        -- Zoom in/out
+        local maxCamDist = 6.0
+        local minCamDist = 2.0
+        local zoomSpeed = 6.0
+
+        local camDist = self.camera:GetPosition():Magnitude()
+        camDist = Math.Clamp(camDist + zoomSpeed * -axisRY * deltaTime, minCamDist, maxCamDist)
+        local newPos = self.camera:GetPosition():Normalize() * camDist
+        self.camera:SetPosition(newPos)
+    end
 
 end
 

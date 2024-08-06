@@ -26,7 +26,7 @@ function MatchState:Create()
     self.gridSizeZ = 32
 
     self.bombers = {}
-    self.numBombers = 4
+    self.numBombers = 1 -- Reset to 4 once we attempt to get other players or bots working
     self.enableBots = true
 
     self.objectSpawnChance = 0.8

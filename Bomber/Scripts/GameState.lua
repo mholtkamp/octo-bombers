@@ -3,6 +3,7 @@ GameState =
     match = nil,
     searching = false,
     searchTimerHandle = nil,
+    statsEnabled = false,
 }
 
 function GameState:Init()

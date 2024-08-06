@@ -6,8 +6,6 @@ MainMenu =
 
 function MainMenu:Start()
 
-    Renderer.EnableStatsOverlay(true)
-
     self.optSolo = self:FindChild('OptSolo', true)
     self.optCreate = self:FindChild('OptCreateNet', true)
     self.optJoin = self:FindChild('OptJoinNet', true)
@@ -27,5 +25,9 @@ function MainMenu:Tick(deltaTime)
     if (Input.IsGamepadButtonJustDown(Gamepad.Start)) then
         Log.Debug('Starting Solo Match')
         GameState:StartSoloMatch()
+    end
+
+    if (Input.IsGamepadPressed(Gamepad.Select)) then
+        Engine.Quit()
     end
 end
