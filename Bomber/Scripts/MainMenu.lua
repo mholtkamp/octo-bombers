@@ -27,7 +27,8 @@ function MainMenu:Tick(deltaTime)
         GameState:StartSoloMatch()
     end
 
-    if (Input.IsGamepadPressed(Gamepad.Select)) then
+    if (Input.IsGamepadPressed(Gamepad.Select) or 
+            (Input.IsGamepadDown(Gamepad.L1) and Input.IsGamepadDown(Gamepad.R1))) then
         Engine.Quit()
     end
 end

@@ -280,6 +280,7 @@ function Bomber:UpdateAction(deltaTime)
         if (Input.IsGamepadPressed(Gamepad.Y)) then
             GameState.statsEnabled = not GameState.statsEnabled
             Renderer.EnableStatsOverlay(GameState.statsEnabled)
+            Log.Enable(GameState.statsEnabled)
         end
         
         if (Input.IsGamepadPressed(Gamepad.Start)) then
