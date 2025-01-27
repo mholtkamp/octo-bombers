@@ -50,9 +50,7 @@ function Bomber:Start()
         self.world:SetActiveCamera(self.camera)
     end
 
-    if (self:IsOwned()) then
-        self:SetWorldPosition(self.netPosition)
-    end
+    self:OwnerChanged()
 
 end
 
@@ -120,7 +118,7 @@ function Bomber:OwnerChanged()
     
     self.justPossessed = true
 
-    if (self:IsOwned()) then
+    if (self:HasStarted() and self:IsOwned()) then
         self:SetWorldPosition(self.netPosition)
         self.world:SetActiveCamera(self.camera)
     end
