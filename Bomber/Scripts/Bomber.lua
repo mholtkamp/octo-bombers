@@ -118,7 +118,7 @@ function Bomber:OwnerChanged()
     
     self.justPossessed = true
 
-    if (self:HasStarted() and self:IsOwned()) then
+    if ((not Network.IsLocal()) and self:HasStarted() and self:IsOwned()) then
         self:SetWorldPosition(self.netPosition)
         self.world:SetActiveCamera(self.camera)
     end
