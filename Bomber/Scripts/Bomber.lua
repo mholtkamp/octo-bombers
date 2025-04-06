@@ -242,10 +242,10 @@ function Bomber:UpdateAction(deltaTime)
     self.actionTime = math.max(self.actionTime - deltaTime, 0)
 
     if (self:IsLocallyControlled() and self.actionTime <= 0.0) then
-        if (Input.IsKeyJustDown(Key.Z) or Input.IsGamepadButtonDown(Gamepad.B)) then
+        if (Input.IsKeyJustDown(Key.Z) or Input.IsGamepadPressed(Gamepad.B)) then
             -- Plant Bomb
             self:InvokeNetFunc('S_PlantBomb')
-        elseif (Input.IsKeyJustDown(Key.X) or Input.IsGamepadButtonDown(Gamepad.A)) then
+        elseif (Input.IsKeyJustDown(Key.X) or Input.IsGamepadPressed(Gamepad.A)) then
             -- Swing Cane
             self:InvokeNetFunc('S_SwingCane')
         end
