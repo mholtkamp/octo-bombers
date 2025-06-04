@@ -13,34 +13,48 @@ function MainMenu:Start()
     -- OnActivated will pass a self param if needed
     -- You can make a single script that implements an OnActivated function instead of
     -- setting the function externally like we are doing here.
-    -- And you can also handle "Activated", "Hovered", "Pressed" signals if you prefer.
     self.optSolo.OnActivated = function() GameState:StartSoloMatch() end
     self.optCreate.OnActivated = function() GameState:StartNetMatch() end
     self.optJoin.OnActivated = function() GameState:JoinNetMatch() end
 
     for i=1, #self.buttons do 
-        self.buttons[i]:ConnectSignal("Hovered", self, function() self.selIndex = i end)
+        self.buttons[i].index = i
+        self.buttons[i]:ConnectSignal("StateChanged", self, MainMenu.ButtonStateChanged)
     end
 
-    self.optSolo:SetState(ButtonState.Hovered)
     self.selIndex = 1
+    Button.SetSelected(self.buttons[1])
+end
+
+function MainMenu:ButtonStateChanged(button)
+
+    if (button == Button.GetSelected()) then
+        self.selIndex = button.index
+        button:GetText():SetColor(Vec(0.2, 0.2, 0.2, 1))
+    else
+        button:GetText():SetColor(Vec(1,1,1,1))
+    end
+
 end
 
 function MainMenu:Tick(deltaTime)
 
     -- Button navigation and activation
+    local selMoved = false
     if (Input.IsGamepadPressed(Gamepad.Down) or Input.GetGamepadAxis(Gamepad.AxisLY) < -0.5) then
         self.selIndex = self.selIndex + 1
+        selMoved = true
     end
 
        if (Input.IsGamepadPressed(Gamepad.Up) or Input.GetGamepadAxis(Gamepad.AxisLY) > 0.5) then
         self.selIndex = self.selIndex - 1
+        selMoved = true
     end
 
     self.selIndex = Math.Clamp(self.selIndex, 1, #self.buttons)
 
-    if (self.buttons[self.selIndex]:GetState() == ButtonState.Normal) then
-        self.buttons[self.selIndex]:SetState(ButtonState.Hovered)
+    if (selMoved) then
+        Button.SetSelected(self.buttons[self.selIndex])
     end
 
     if (Input.IsGamepadPressed(Gamepad.A)) then
