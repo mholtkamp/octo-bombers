@@ -41,12 +41,12 @@ function MainMenu:Tick(deltaTime)
 
     -- Button navigation and activation
     local selMoved = false
-    if (Input.IsGamepadPressed(Gamepad.Down) or Input.GetGamepadAxis(Gamepad.AxisLY) < -0.5) then
+    if (Input.IsGamepadPressed(Gamepad.Down) or Input.IsGamepadPressed(Gamepad.LsDown)) then
         self.selIndex = self.selIndex + 1
         selMoved = true
     end
 
-       if (Input.IsGamepadPressed(Gamepad.Up) or Input.GetGamepadAxis(Gamepad.AxisLY) > 0.5) then
+       if (Input.IsGamepadPressed(Gamepad.Up) or Input.IsGamepadPressed(Gamepad.LsUp)) then
         self.selIndex = self.selIndex - 1
         selMoved = true
     end
