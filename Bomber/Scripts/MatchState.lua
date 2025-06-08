@@ -250,10 +250,8 @@ function MatchState:InstantiateBombers()
         self.bombers[i]:SetAlive(false)
     end
 
-    -- If this is a net-game, then we need to assign the owning host for the server-controlled bomber.
-    if (Network.IsServer()) then
-        self.bombers[1]:SetOwningHost(NetHost.Server)
-    end
+    -- The first bomber will be controlled by the server in a multiplayer game
+    self.bombers[1]:SetOwningHost(NetHost.Authority)
 
 end
 

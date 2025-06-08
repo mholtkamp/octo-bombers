@@ -150,19 +150,6 @@ function Bomber:Tick(deltaTime)
 
 end
 
-function Bomber:IsLocallyControlled()
-
-    local locallyControlled = false
-    if (Network.IsLocal()) then
-        locallyControlled = (self.bomberId == 1)
-    else
-        locallyControlled = self:IsOwned()
-    end
-
-    return locallyControlled
-
-end
-
 function Bomber:IsBot()
     local owningHost = self:GetOwningHost()
     local isBot = (owningHost == NetHost.Invalid) and (self.bomberId ~= 1)
