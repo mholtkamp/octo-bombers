@@ -86,11 +86,14 @@ function MatchState:Start()
         self:ResetMatch()
     end
 
+    Renderer.SetClearColor(Vec(0.0, 0.0, 0.2, 1.0))
 end
 
 function MatchState:Stop()
 
     GameState:SetMatch(nil)
+
+    Renderer.SetClearColor(Vec(0.0, 0.0, 0.0, 1.0))
 
 end
 

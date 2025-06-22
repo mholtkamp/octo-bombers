@@ -26,9 +26,6 @@ function MainMenu:Start()
     self.selIndex = 1
     Button.SetSelected(self.buttons[1])
 
-    local title3ds = self:FindChild("Title3DS", true)
-    Log.Debug("title3ds = " .. tostring(title3ds))
-
     -- On 3DS, but the title in World 1 and menu in World 2
     if (Engine.GetPlatform() == "3DS") then
         self.title:SetVisible(false)
@@ -39,6 +36,13 @@ function MainMenu:Start()
         Engine.GetWorld(2):SetRootNode(self)
         Engine.GetWorld(1):SetRootNode(title3ds)
     end
+
+    Renderer.SetClearColor(Vec(0.1, 0.0, 0.0, 1.0))
+
+end
+
+function MainMenu:Stop()
+    Renderer.SetClearColor(Vec(0.0, 0.0, 0.0, 1.0))
 end
 
 function MainMenu:ButtonStateChanged(button)
