@@ -5,6 +5,7 @@ MainMenu =
 
 function MainMenu:Start()
 
+    self.title = self:FindChild('Title', true)
     self.optSolo = self:FindChild('OptSolo', true)
     self.optCreate = self:FindChild('OptCreateNet', true)
     self.optJoin = self:FindChild('OptJoinNet', true)
@@ -24,6 +25,20 @@ function MainMenu:Start()
 
     self.selIndex = 1
     Button.SetSelected(self.buttons[1])
+
+    local title3ds = self:FindChild("Title3DS", true)
+    Log.Debug("title3ds = " .. tostring(title3ds))
+
+    -- On 3DS, but the title in World 1 and menu in World 2
+    if (Engine.GetPlatform() == "3DS") then
+        self.title:SetVisible(false)
+
+        local title3ds = self:FindChild("Title3DS", true)
+        title3ds:SetVisible(true)
+        title3ds:Attach(nil)
+        Engine.GetWorld(2):SetRootNode(self)
+        Engine.GetWorld(1):SetRootNode(title3ds)
+    end
 end
 
 function MainMenu:ButtonStateChanged(button)

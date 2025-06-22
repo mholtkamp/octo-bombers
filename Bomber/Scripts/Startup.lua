@@ -34,5 +34,5 @@ GameState:Init()
 if (not Engine.IsEditor()) then
     local mainMenuScene = LoadAsset('SC_MainMenu')
     local mainMenu = mainMenuScene:Instantiate()
-    Engine.GetWorld():SetRootNode(mainMenu)    
+    Engine.GetWorld():SetRootNode(mainMenu)
 end

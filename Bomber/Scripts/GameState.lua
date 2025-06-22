@@ -59,6 +59,10 @@ function GameState:StartNetMatch()
         Network.OpenSession()
     end
 
+    if (Engine.GetPlatform() == "3DS") then
+        Engine.GetWorld(2):Clear()
+    end
+
     Engine.GetWorld():LoadScene('SC_Match')
 
 end
