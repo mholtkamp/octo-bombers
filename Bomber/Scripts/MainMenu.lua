@@ -58,34 +58,6 @@ end
 
 function MainMenu:Tick(deltaTime)
 
-    -- Button navigation and activation
-    local selMoved = false
-    if (Input.IsGamepadPressed(Gamepad.Down) or Input.IsGamepadPressed(Gamepad.LsDown)) then
-        self.selIndex = self.selIndex + 1
-        selMoved = true
-    end
-
-       if (Input.IsGamepadPressed(Gamepad.Up) or Input.IsGamepadPressed(Gamepad.LsUp)) then
-        self.selIndex = self.selIndex - 1
-        selMoved = true
-    end
-
-    self.selIndex = Math.Clamp(self.selIndex, 1, #self.buttons)
-
-    if (selMoved) then
-        Button.SetSelected(self.buttons[self.selIndex])
-    end
-
-    if (Input.IsGamepadPressed(Gamepad.A)) then
-        self.buttons[self.selIndex]:Activate()
-    end
-
-    -- Start begins a solo match
-    if (Input.IsGamepadButtonJustDown(Gamepad.Start)) then
-        Log.Debug('Starting Solo Match')
-        GameState:StartSoloMatch()
-    end
-
     -- Select quits the game
     if (Input.IsGamepadPressed(Gamepad.Select) or 
             (Input.IsGamepadDown(Gamepad.L1) and Input.IsGamepadDown(Gamepad.R1))) then
