@@ -11,6 +11,9 @@ function Bomber:Create()
 
     self.bomberId = 1
 
+    self.specNum = Property.Create(DatumType.Integer, 1337)
+    self.specStr = Property.Create(DatumType.String, "Beepboop", "SPEX STR")
+
     self:Reset()
 end
 
@@ -51,6 +54,10 @@ function Bomber:Start()
     end
 
     self:OwnerChanged()
+
+    self.textMesh = Node.New("TextMesh3D")
+    self:AddChild(self.textMesh)
+    self.textMesh:SetPosition(Vec(0, 2, 0))
 
 end
 
@@ -147,6 +154,12 @@ function Bomber:Tick(deltaTime)
     self:UpdateCell(deltaTime)
     self:UpdateCamera(deltaTime)
     self:UpdateNetwork(deltaTime)
+
+    if (Input.IsKeyDown(Key.S)) then
+        self.textMesh:SetText(self.specNum)
+    else
+        self.textMesh:SetText(self.specStr)
+    end
 
 end
 
